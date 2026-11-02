@@ -1,0 +1,9 @@
+{
+  "display_name": "PP-小手机",
+  "loading_order": 101,
+  "js": "extension/index.js?cb=20261102-chatsync2",
+  "css": "extension/style.css",
+  "author": "zzzu",
+  "version": "1.0.0",
+  "homePage": ""
+}
