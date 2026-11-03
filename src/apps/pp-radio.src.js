@@ -9,7 +9,7 @@
 {
   "id": "pp-radio",
   "name": "电台",
-  "version": "3.10.11-langfix",
+  "version": "3.10.12-timeoutfix",
   "description": "多主持人私人电台 · 陪伴模式自动起播 · 歌单耗尽整表循环 · 全局本地台本与歌曲台本版本管理",
   "icon": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M5.64 18.36a9 9 0 0 1 0-12.72\"/><path d=\"M18.36 5.64a9 9 0 0 1 0 12.72\"/><path d=\"M8.46 15.54a5 5 0 0 1 0-7.08\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.08\"/>",
   "enabled": true,
@@ -1577,7 +1577,7 @@
 
         var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
 
-        var TIMEOUT_MS = Math.max(15000, Math.min(180000, _num(cfg.aiTimeoutMs, 60000)));
+        var TIMEOUT_MS = Math.max(15000, Math.min(600000, _num(cfg.aiTimeoutMs, 300) * 1000));
 
         var timer = ctl ? setTimeout(function() { ctl.abort(); }, TIMEOUT_MS) : null;
 
@@ -2128,6 +2128,65 @@
             done({ status: 'failed', fixed: 0, error: (e && e.message) || String(e || '') });
 
         }, _fixModel() || undefined);
+
+    }
+
+
+
+    /* 手动「语言检测修复」公共入口：编辑页与台本库顶部 ops 行共用。
+     * 流程：本地检测 → 有 need 先确认 → 调修复模型 → 成功/失败都弹窗反馈。 */
+    function _manualLangFix(version, hosts) {
+
+        var nodes = version.nodes || [];
+
+        var need = _scanLangNeed(nodes, hosts);
+
+        if (!need.length) {
+
+            /* 明确反馈：弹窗告知检查通过，避免"点了没反应" */
+            if (TOP.confirm) TOP.confirm('语言检查完成：全部台词语言符合角色设置，无需修复。');
+
+            else _toast('语言检查通过，无需修复');
+
+            return;
+
+        }
+
+        var brief = need.map(function(f) { return f.idx + 1 + '.' + f.host + '（' + f.why + '）'; }).join(' ');
+
+        if (TOP.confirm && !TOP.confirm('检测到 ' + need.length + ' 处语言不符，将按角色语言重写：\n' + brief + '\n\n确认执行？')) return;
+
+        _toast('正在按角色语言重写 ' + need.length + ' 处…');
+
+        _fixLangNodes(nodes, hosts, { auto: false }, function(res) {
+
+            if (res.status === 'done') {
+
+                version.edited = true;
+
+                v3.save();
+
+                refreshContinuous();
+
+                var _doneMsg = '语言修复完成：更新 ' + res.fixed + ' 段朗读文本，台本已保存' + ((res.missed && res.missed.length) ? '（' + res.missed.length + ' 段未匹配，可再点一次重试）' : '');
+
+                /* 成功也弹窗：普通用户不会蹲控制台看反馈（用户要求） */
+                if (TOP.confirm) TOP.confirm(_doneMsg);
+
+                else _toast(_doneMsg);
+
+            } else if (res.status === 'failed') {
+
+                _setApiStatus('error', 'langFix', '语言修复失败', res.error || '', '可点“查看上次 API 返回”查看详情');
+
+                /* 明确反馈：失败弹窗显示错误（用户要求修复失败要有可见提醒） */
+                if (TOP.confirm) TOP.confirm('语言修复失败：' + (res.error || '未知错误') + '\n\n可点设置里「查看上次 API 返回」查看请求详情。');
+
+                else _toast('语言修复失败：' + (res.error || ''));
+
+            }
+
+        });
 
     }
 
@@ -5128,13 +5187,78 @@
 
         if (!jobs || !jobs.length) return;
 
-        var q = _chatVoiceEnsure();
+        /* 朗读前语言自检修复（主播连线聊天）：入队前本地检测，不符则批量调修复模型改写（每条消息仅首次检测，避免反复等待；失败降级原样入队） */
+        if (!(eng.cfg && eng.cfg.autoFixLang === false)) {
 
-        for (var i = 0; i < jobs.length; i++) q.q.push(jobs[i]);
+            var _hostsL = _selectedHosts(eng.store || {});
 
-        _chatVoiceRequestMore();
+            var _fixArr = [], _fixIdx = [];
 
-        _chatVoicePlayNext();
+            for (var fi = 0; fi < jobs.length; fi++) {
+
+                var mj = jobs[fi] && jobs[fi].msg;
+
+                if (!mj || mj._langFixed) continue;
+
+                mj._langFixed = true;
+
+                _fixArr.push({ type: 'speech', host: mj.host || '', ttsText: mj.tts || '', displayText: mj.display || '' });
+
+                _fixIdx.push(fi);
+
+            }
+
+            if (_fixArr.length && _scanLangNeed(_fixArr, _hostsL).length) {
+
+                _fixLangNodes(_fixArr, _hostsL, { auto: true }, function(res) {
+
+                    if (res && res.status === 'done' && res.fixed > 0) {
+
+                        for (var fi2 = 0; fi2 < _fixArr.length; fi2++) {
+
+                            var fn2 = _fixArr[fi2], mj2 = jobs[_fixIdx[fi2]] && jobs[_fixIdx[fi2]].msg;
+
+                            if (mj2 && fn2) {
+
+                                if (fn2.ttsText !== undefined) mj2.tts = fn2.ttsText;
+
+                                if (fn2.displayText !== undefined) {
+
+                                    mj2.display = fn2.displayText;
+
+                                    mj2.content = fn2.displayText;
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    _doEnqueue(jobs);
+
+                });
+
+                return;
+
+            }
+
+        }
+
+        _doEnqueue(jobs);
+
+        function _doEnqueue(jobs2) {
+
+            var q = _chatVoiceEnsure();
+
+            for (var i = 0; i < jobs2.length; i++) q.q.push(jobs2[i]);
+
+            _chatVoiceRequestMore();
+
+            _chatVoicePlayNext();
+
+        }
 
     }
 
@@ -5151,6 +5275,58 @@
         }
 
         var hosts = _selectedHosts(eng.store || {});
+
+        /* 朗读前语言自检修复（其他语音输出）：单曲/收藏/连续台本当前项等所有走 _speakItem 的朗读，
+         * 朗读前本地检测语言，不符则调修复模型改写（每条仅首次检测，避免反复等待；失败降级继续朗读）。 */
+        if ((eng.cfg && eng.cfg.autoFixLang !== false) && !item._langFixed && item.say) {
+
+            item._langFixed = true;
+
+            var _segs0 = _parseSaySegments(item.say);
+
+            var _fixArr = [];
+
+            _segs0.forEach(function(p) {
+
+                _fixArr.push({ type: 'speech', host: (p.tag && p.tag.name) || item.host || '', ttsText: p.tts || '', displayText: p.display || '' });
+
+            });
+
+            if (_scanLangNeed(_fixArr, hosts).length) {
+
+                _fixLangNodes(_fixArr, hosts, { auto: true }, function(res) {
+
+                    if (res && res.status === 'done' && res.fixed > 0) {
+
+                        var _newSay = _segs0.map(function(p, i2) {
+
+                            var fn = _fixArr[i2], nm = (p.tag && p.tag.name) || item.host || '', lg = (p.tag && p.tag.lang) || '';
+
+                            if (fn) {
+
+                                if (fn.ttsText !== undefined) p.tts = fn.ttsText;
+
+                                if (fn.displayText !== undefined) p.display = fn.displayText;
+
+                            }
+
+                            return p.tag ? '[VoiceTag:' + nm + ':' + lg + ':' + (p.tts || '') + ']“' + (p.display || '') + '”' : (p.display || '');
+
+                        }).join('');
+
+                        if (_newSay && _newSay !== item.say) item.say = _newSay;
+
+                    }
+
+                    _speakItem(item, force, after);
+
+                });
+
+                return;
+
+            }
+
+        }
 
         var parsedList = _parseSaySegments(item.say || '');
 
@@ -6218,6 +6394,8 @@
 
         }
 
+        eng.refreshChatUi();
+
         _setApiStatus('loading', 'chat', '主播连线', '', text);
 
         var prompt = _buildCommon(cfg.radioChatPrompt || '', {
@@ -6321,6 +6499,8 @@
             _setApiStatus('error', 'chat', '主播连线', e, text);
 
             _toast('主播连线失败: ' + e);
+
+            eng.refreshChatUi();
 
         });
 
@@ -6706,7 +6886,7 @@
 
         SNAP_GAP = 24;
 
-    var FIELDS = [{"group":"电台","key":"batchSize","type":"number","label":"每次 API 请求准备曲数","default":10,"min":1,"max":12},{"group":"电台","key":"leadSeconds","type":"number","label":"歌曲剩余多少秒时准备/切到下一首","default":0,"min":0,"max":60},{"group":"电台","key":"backgroundPlayback","type":"toggle","label":"关闭功能系统后继续后台播放","default":true},{"group":"电台","key":"autoRequest","type":"toggle","label":"队列为空时自动请求下一批","default":true},{"group":"电台","key":"loopPlaylist","type":"toggle","label":"没有新曲时循环最近播放","default":false},{"group":"电台","key":"recentDedupeCount","type":"number","label":"请求时避免最近 N 首同名重复","default":30,"min":0,"max":200,"step":1},{"group":"电台","key":"playHistoryLimit","type":"number","label":"播放历史保存数量","default":30,"min":1,"max":200,"step":1},{"group":"电台","key":"scriptHistoryMax","type":"number","label":"收藏曲目台词历史版本上限","default":3,"min":1,"max":20,"step":1},{"group":"电台","key":"updateScripts","type":"toggle","label":"播放前自动更新台本（建议关闭，使用底部批量更新）","default":false},{"group":"电台","key":"musicVolume","type":"number","label":"音乐正常音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"voiceVolume","type":"number","label":"主持人语音音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"autoFixLang","type":"toggle","label":"朗读前自动检测修复台词语言","default":true},{"group":"电台","key":"fixModel","type":"text","label":"语言修复专用模型（留空=跟随全局）","default":"Pro/deepseek-ai/DeepSeek-V3.2","placeholder":"Pro/deepseek-ai/DeepSeek-V3.2"},{"group":"电台","key":"captionOnFloat","type":"toggle","label":"字幕显示在电台悬浮球/播放条旁","default":true},{"group":"电台","key":"captionTopRight","type":"toggle","label":"字幕显示在屏幕右上角","default":false},{"group":"电台","key":"popupFontSize","type":"number","label":"字幕弹窗字体大小","default":13,"min":10,"max":22,"step":1},{"group":"电台","key":"voiceLanguage","type":"select","label":"VoiceTag 朗读语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"displayLanguage","type":"select","label":"字幕显示语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"chatBilingual","type":"toggle","label":"主播对话双语显示","default":false},{"group":"电台","key":"chatRecentMessages","type":"number","label":"主播对话完整记忆条数","default":10,"min":0,"max":100,"step":1},{"group":"电台","key":"chatSummaryBatch","type":"number","label":"主播对话每多少条旧消息总结一次","default":40,"min":5,"max":200,"step":1},{"group":"电台","key":"recommendChatMessages","type":"number","label":"推荐歌曲时带入最近对话条数","default":6,"min":0,"max":60,"step":1},{"group":"上下文","key":"contextSource","type":"multiselect","label":"剧情上下文来源（可多选）","default":["st","horae"],"options":[{"v":"st","l":"酒馆历史（同步 Visual Novel 标签过滤）"},{"v":"horae","l":"Horae 总结"},{"v":"baibai","l":"柏宝书总结（正常记忆注入口径）"}]},{"group":"上下文","key":"stHistN","type":"number","label":"酒馆聊天历史条数（0=不注入）","default":1,"min":0,"max":80},{"group":"上下文","key":"radioWbIds","type":"textarea","label":"电台绑定世界书 <button type=\"button\" onclick=\"typeof window._vnmRadioToggleWbSettings==='function'&&window._vnmRadioToggleWbSettings(this)\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.14);color:rgba(255,255,255,.68);font-size:11px;cursor:pointer;font-family:inherit;line-height:1.7;\">选择世界书</button>","rows":2,"default":"","placeholder":"点击上方按钮勾选世界书；也可手动输入世界书ID或名称，每行一个"},{"group":"提示词","key":"promptTemplate","type":"textarea-presets","label":"电台编排提示词","rows":13,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{酒馆历史}}","{{Horae总结}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放曲目}}","{{近期已播放曲目禁止重复}}","{{最近主播对话}}","{{用户输入}}","{{请求曲数}}","{{朗读语言}}","{{显示语言}}"],"default":"你是专业的电台台本写作者，接下来你要为用户选择的角色进行台本的创作。台本的内容不是正式广播节目，而是角色本人陪 {{用户名称}} 一起听歌、聊天、换歌前后自然聊天。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就把他们视为正在同一个私人电台空间里陪用户听歌。他们可以轮流说话、互相接话，也可以回应用户；不要受主线剧情中是否在场的限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【近期已播放曲目禁止重复】\n{{近期已播放曲目禁止重复}}\n\n【最近主播对话】\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n请选择 {{请求曲数}} 首真实存在的歌曲，并为每首歌曲写一段角色对用户说的台本。\n\n选歌要求：\n1. 歌曲必须真实存在，歌名和艺术家必须准确。\n2. 除非用户明确要求，否则不要推荐 Live、Remix、Cover、伴奏或同名翻唱版本。\n3. 结合用户要求、音乐偏好、最近对话、剧情氛围和角色性格选歌。\n4. 不要编造音频地址、歌曲 ID、平台来源或搜索链接。播放器会根据歌名和艺术家自行搜索音源。\n\n台本要求：\n1. 台本重点是角色本人和 {{用户名称}} 的相处感，像角色陪用户一起听歌时自然说的话。\n2. 不要写成主持人报幕、正式广播、歌曲百科、音乐史或专业乐评。\n3. 可以回应最近对话、用户心情和剧情氛围，也可以让多个主持人自然接话。\n4. host 必须使用【主持人】中出现的角色名字。\n5. VoiceTag 内的发送文本必须只使用 {{朗读语言}}；中文弯引号中的显示文本必须只使用 {{显示语言}}。\n\n最终只返回一个合法 JSON 对象。不要 Markdown，不要代码块，不要解释，不要标题，也不要输出 JSON 之外的文字。\n\n返回格式必须严格如下：\n{\"items\":[{\"host\":\"主持人名字\",\"say\":\"[VoiceTag:主持人名字:{{朗读语言}}:发送文本]“显示文本”\",\"song\":{\"title\":\"真实歌名\",\"artist\":\"真实艺术家\"},\"reason\":\"简短的内部选歌备注\"}]}\n\n字段规则：\n- items 数量必须等于 {{请求曲数}}。\n- song 对象只能包含 title 和 artist 两个字段。\n- 不要输出 url、query、id、source、platform 或其他歌曲字段。\n- JSON 中所有字符串必须正确转义并完整闭合。"},{"group":"音乐源","key":"musicLibrary","type":"textarea-presets","label":"本地曲库（每行 JSON 或 歌名 | 歌手 | url | 标签）","rows":8,"variables":["{\"title\":\"歌名\",\"artist\":\"歌手\",\"url\":\"https://...mp3\",\"tags\":\"标签\"}"],"default":"{\"title\":\"示例歌曲\",\"artist\":\"可替换歌手\",\"url\":\"https://example.com/song.mp3\",\"tags\":\"安静,夜晚\",\"note\":\"把这一行换成真实可播放 mp3/flac/ogg 直链\"}\n歌名 | 歌手 | https://example.com/song.mp3 | 标签或备注"},{"group":"音乐偏好","key":"tasteDistillPrompt","type":"textarea-presets","label":"音乐偏好蒸馏提示词","rows":10,"variables":["{{用户输入}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放}}"],"default":"请根据用户输入、收藏曲目和最近播放记录，蒸馏出一个可以长期用于私人电台推荐的音乐偏好提示词。\n\n要求：\n1. 输出中文，80-220字。\n2. 不要写成列表，不要解释你的过程。\n3. 保留用户明确喜欢/不喜欢的曲风、语言、年代、情绪、节奏、歌手/作品倾向。\n4. 如果信息不足，就谨慎概括，不要编造。\n\n【用户输入】\n{{用户输入}}\n\n【已有偏好】\n{{音乐偏好}}\n\n【收藏曲目】\n{{收藏曲目}}\n\n【最近播放】\n{{最近播放}}"},{"group":"提示词","key":"scriptRewritePrompt","type":"textarea-presets","label":"收藏/手动曲目更新台本提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近主播对话}}","{{曲目列表}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在为已经确定要播放的曲目补写角色台词。不要推荐新歌，不要改变曲目，只给每首给定曲目写一段角色说给用户听的话。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在这个“陪你听歌”的小空间里。可以互相对话、一起跟用户聊天。不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【需要补台词的曲目】\n{{曲目列表}}\n\n写作方向：\n- 像角色陪 user 一起听这首歌，不要写成正式节目串场。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n- 可以回应最近聊天、剧情气氛、用户偏好，但语气要自然。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"scripts\":[{\"key\":\"{{曲目key}}\",\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n填写要求：\n- 每个 scripts 对象必须对应【需要补台词的曲目】里的一首歌，key 必须原样使用给定的曲目 key。\n- host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatPrompt","type":"textarea-presets","label":"主播连线聊天提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近播放曲目}}","{{聊天总结}}","{{最近主播对话}}","{{用户输入}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在扮演被用户选中的角色，和 {{用户名称}} 一边听歌一边聊天。这里只回复聊天内容，不推荐新曲目，不输出歌曲。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在聊天现场。可以一人回答，也可以多人接话互动；不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近播放曲目】\n{{最近播放曲目}}\n\n【已总结的聊天】\n{{聊天总结}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【用户刚说】\n{{用户输入}}\n\n写作方向：\n- 像角色本人直接回应 user，不要写成主持人连线、节目采访或正式播音。\n- 可以顺着正在听歌的氛围说，但重点是和 user 说话。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"replies\":[{\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n主持人存在多人的情况请让角色按场景自然参加。不要只一个人讲话。根据用户这句话和最近聊天，自然判断哪些主持人该说话：可以一个人说，也可以多人接话，也可以有人不发言；不要固定顺序，不要重复上一轮发言模式。用户 @ 到的主持人必须发言。\n\n填写要求：\n- replies 数量按场景自然决定，通常 1-3 条；每条 host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatSummaryPrompt","type":"textarea-presets","label":"主播对话记忆总结提示词","rows":5,"variables":["{{旧总结}}","{{对话内容}}"],"default":"请把私人电台主播与用户的旧对话整理成连续记忆摘要，保留用户偏好、情绪、承诺、重要剧情联系、刚才聊到的歌和主播表达过的态度。不要列表，不要解释，120-260字。\n\n【旧总结】\n{{旧总结}}\n\n【新增对话】\n{{对话内容}}"},{"group":"音乐源","key":"gdMusicApiBase","type":"text","label":"GD音乐台接口地址","default":"https://music-api.gdstudio.xyz/api.php","placeholder":"https://music-api.gdstudio.xyz/api.php"},{"group":"覆盖 API","key":"useOwnApi","type":"toggle","label":"启用自定义电台 API","default":false},{"group":"覆盖 API","key":"ownApiUrl","type":"text","label":"API 地址","default":"","placeholder":"https://api.example.com/v1"},{"group":"覆盖 API","key":"ownApiKey","type":"password","label":"API 密钥","default":""},{"group":"覆盖 API","key":"useOwnModel","type":"toggle","label":"使用自定义模型名","default":false},{"group":"覆盖 API","key":"ownModel","type":"text","label":"模型名","default":""},{"group":"生成参数","key":"temperature","type":"number","label":"Temperature","default":0.9,"min":0,"max":2},{"group":"生成参数","key":"maxTokens","type":"number","label":"最大输出 tokens <button type=\"button\" onclick=\"window._vnmRadioShowLastApi&&window._vnmRadioShowLastApi()\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.09);border:.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:11px;cursor:pointer;font-family:inherit;\">查看上次 API 返回</button>","default":20000,"min":256,"max":50000},{"group":"覆盖 TTS","key":"ttsProviderOverride","type":"select","label":"语音来源(本电台，留空则跟随全局)","options":[{"value":"","label":"跟随全局"},{"value":"minimax","label":"MiniMax"},{"value":"fishaudio","label":"Fish Audio"}],"default":""},{"group":"覆盖 TTS","key":"useOwnTts","type":"toggle","label":"使用自定义凭证(而非全局Key)","default":false},{"group":"覆盖 TTS","key":"ownTtsKey","type":"password","label":"MiniMax API Key","default":""},{"group":"覆盖 TTS","key":"ownTtsGid","type":"text","label":"MiniMax Group ID","default":""},{"group":"覆盖 TTS","key":"ownFishKey","type":"password","label":"Fish Audio API Key","default":""},{"group":"电台","key":"barAlbumGlass","type":"toggle","label":"第二形态专辑图液态玻璃遮罩","default":true},{"group":"歌词","key":"barLyrics","type":"toggle","label":"第二形态流动歌词显示","default":true},{"group":"歌词","key":"orbLyrics","type":"toggle","label":"第一形态侧边歌词显示","default":true},{"group":"歌词","key":"lyricsStyle","type":"select","label":"歌词动画样式","default":"fume","options":[{"v":"fume","l":"浮名（模糊聚焦）"},{"v":"lumi","l":"流光（逐行点亮）"},{"v":"stack","l":"云阶（层叠上升）"},{"v":"scroll","l":"简约滚动"}]},{"group":"电台","key":"keepModeOnVnExit","type":"toggle","label":"退出VN模式时保持当前形态（关=收回第一形态）","default":false},{"group":"电台","key":"autoRetry","type":"toggle","label":"请求失败自动重试","default":true},{"group":"电台","key":"retryCount","type":"number","label":"自动重试次数","default":2,"min":0,"max":10},{"group":"电台","key":"radioTtsEnabled","type":"toggle","label":"启用 TTS 语音（关闭后仅显示台本/字幕不请求语音）","default":true},{"group":"音乐偏好","key":"tasteEnabled","type":"toggle","label":"启用蒸馏结果（{{音乐偏好}}）","default":true},{"group":"电台","key":"leftCardImage","type":"text","label":"第三形态左侧播放栏背景图 URL（留空=当前专辑封面）","default":"","placeholder":"https://..."},{"group":"提示词","key":"artistChatPrompt","type":"textarea-presets","label":"Artist 私聊提示词（同电话 App）","default":"【回复格式（最高优先级，违反即不合格）】\n你的每条回复必须且只能使用下面这一种格式（需要多说几条就分成多行，每行一条）：\n[VoiceTag:{{角色名称}}:{{朗读语言}}:语音文本]“字幕文本”\n- 方括号内的“语音文本”必须整句使用 {{朗读语言}} 书写，这是发送给 TTS 朗读的内容。\n- 中文弯引号“ ”内的“字幕文本”必须整句使用 {{显示语言}} 书写，这是显示给用户看的字幕。\n- 语音文本与字幕文本是同一句话的两种语言版本，内容含义必须一一对应。\n- VoiceTag 格式不是 Markdown、不是 JSON、不是代码块；禁止输出 JSON 对象、```代码块、**加粗**、列表或任何解释。\n\n你正在扮演{{角色名称}}与{{用户名称}}进行对话。\n【角色设定】\n{{角色名称}}\n{{角色设定}}\n【用户设定】\n{{用户名称}}\n{{用户设定}}\n【世界背景信息】\n{{世界书}}\n【当前{{用户名称}}经历】\n{{酒馆历史}}\n【最近对话】\n{{对话内容}}\n请用简短自然的口语风格回复，20字以内，只说话不描述动作，不要输出任何额外内容。","rows":12,"variables":["{{角色名称}}","{{角色设定}}","{{用户名称}}","{{用户设定}}","{{世界书}}","{{酒馆历史}}","{{Horae总结}}","{{对话内容}}","{{用户输入}}","{{当前时间}}","{{朗读语言}}","{{显示语言}}"]},{"group":"电台","key":"artistDepth","type":"number","label":"Artist 私聊携带最大轮数","default":10,"min":0,"max":50},{"group":"电台","key":"artistInjectN","type":"number","label":"Artist 注入酒馆的最近条数","default":8,"min":1,"max":50}];
+    var FIELDS = [{"group":"电台","key":"batchSize","type":"number","label":"每次 API 请求准备曲数","default":10,"min":1,"max":12},{"group":"电台","key":"leadSeconds","type":"number","label":"歌曲剩余多少秒时准备/切到下一首","default":0,"min":0,"max":60},{"group":"电台","key":"backgroundPlayback","type":"toggle","label":"关闭功能系统后继续后台播放","default":true},{"group":"电台","key":"autoRequest","type":"toggle","label":"队列为空时自动请求下一批","default":true},{"group":"电台","key":"loopPlaylist","type":"toggle","label":"没有新曲时循环最近播放","default":false},{"group":"电台","key":"recentDedupeCount","type":"number","label":"请求时避免最近 N 首同名重复","default":30,"min":0,"max":200,"step":1},{"group":"电台","key":"playHistoryLimit","type":"number","label":"播放历史保存数量","default":30,"min":1,"max":200,"step":1},{"group":"电台","key":"scriptHistoryMax","type":"number","label":"收藏曲目台词历史版本上限","default":3,"min":1,"max":20,"step":1},{"group":"电台","key":"updateScripts","type":"toggle","label":"播放前自动更新台本（建议关闭，使用底部批量更新）","default":false},{"group":"电台","key":"musicVolume","type":"number","label":"音乐正常音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"voiceVolume","type":"number","label":"主持人语音音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"autoFixLang","type":"toggle","label":"朗读前自动检测修复台词语言","default":true},{"group":"电台","key":"fixModel","type":"text","label":"语言修复专用模型（留空=跟随全局）","default":"Pro/deepseek-ai/DeepSeek-V3.2","placeholder":"Pro/deepseek-ai/DeepSeek-V3.2"},{"group":"电台","key":"captionOnFloat","type":"toggle","label":"字幕显示在电台悬浮球/播放条旁","default":true},{"group":"电台","key":"captionTopRight","type":"toggle","label":"字幕显示在屏幕右上角","default":false},{"group":"电台","key":"popupFontSize","type":"number","label":"字幕弹窗字体大小","default":13,"min":10,"max":22,"step":1},{"group":"电台","key":"voiceLanguage","type":"select","label":"VoiceTag 朗读语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"displayLanguage","type":"select","label":"字幕显示语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"chatBilingual","type":"toggle","label":"主播对话双语显示","default":false},{"group":"电台","key":"chatRecentMessages","type":"number","label":"主播对话完整记忆条数","default":10,"min":0,"max":100,"step":1},{"group":"电台","key":"chatSummaryBatch","type":"number","label":"主播对话每多少条旧消息总结一次","default":40,"min":5,"max":200,"step":1},{"group":"电台","key":"recommendChatMessages","type":"number","label":"推荐歌曲时带入最近对话条数","default":6,"min":0,"max":60,"step":1},{"group":"上下文","key":"contextSource","type":"multiselect","label":"剧情上下文来源（可多选）","default":["st","horae"],"options":[{"v":"st","l":"酒馆历史（同步 Visual Novel 标签过滤）"},{"v":"horae","l":"Horae 总结"},{"v":"baibai","l":"柏宝书总结（正常记忆注入口径）"}]},{"group":"上下文","key":"stHistN","type":"number","label":"酒馆聊天历史条数（0=不注入）","default":1,"min":0,"max":80},{"group":"上下文","key":"radioWbIds","type":"textarea","label":"电台绑定世界书 <button type=\"button\" onclick=\"typeof window._vnmRadioToggleWbSettings==='function'&&window._vnmRadioToggleWbSettings(this)\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.14);color:rgba(255,255,255,.68);font-size:11px;cursor:pointer;font-family:inherit;line-height:1.7;\">选择世界书</button>","rows":2,"default":"","placeholder":"点击上方按钮勾选世界书；也可手动输入世界书ID或名称，每行一个"},{"group":"提示词","key":"promptTemplate","type":"textarea-presets","label":"电台编排提示词","rows":13,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{酒馆历史}}","{{Horae总结}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放曲目}}","{{近期已播放曲目禁止重复}}","{{最近主播对话}}","{{用户输入}}","{{请求曲数}}","{{朗读语言}}","{{显示语言}}"],"default":"你是专业的电台台本写作者，接下来你要为用户选择的角色进行台本的创作。台本的内容不是正式广播节目，而是角色本人陪 {{用户名称}} 一起听歌、聊天、换歌前后自然聊天。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就把他们视为正在同一个私人电台空间里陪用户听歌。他们可以轮流说话、互相接话，也可以回应用户；不要受主线剧情中是否在场的限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【近期已播放曲目禁止重复】\n{{近期已播放曲目禁止重复}}\n\n【最近主播对话】\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n请选择 {{请求曲数}} 首真实存在的歌曲，并为每首歌曲写一段角色对用户说的台本。\n\n选歌要求：\n1. 歌曲必须真实存在，歌名和艺术家必须准确。\n2. 除非用户明确要求，否则不要推荐 Live、Remix、Cover、伴奏或同名翻唱版本。\n3. 结合用户要求、音乐偏好、最近对话、剧情氛围和角色性格选歌。\n4. 不要编造音频地址、歌曲 ID、平台来源或搜索链接。播放器会根据歌名和艺术家自行搜索音源。\n\n台本要求：\n1. 台本重点是角色本人和 {{用户名称}} 的相处感，像角色陪用户一起听歌时自然说的话。\n2. 不要写成主持人报幕、正式广播、歌曲百科、音乐史或专业乐评。\n3. 可以回应最近对话、用户心情和剧情氛围，也可以让多个主持人自然接话。\n4. host 必须使用【主持人】中出现的角色名字。\n5. VoiceTag 内的发送文本必须只使用 {{朗读语言}}；中文弯引号中的显示文本必须只使用 {{显示语言}}。\n\n最终只返回一个合法 JSON 对象。不要 Markdown，不要代码块，不要解释，不要标题，也不要输出 JSON 之外的文字。\n\n返回格式必须严格如下：\n{\"items\":[{\"host\":\"主持人名字\",\"say\":\"[VoiceTag:主持人名字:{{朗读语言}}:发送文本]“显示文本”\",\"song\":{\"title\":\"真实歌名\",\"artist\":\"真实艺术家\"},\"reason\":\"简短的内部选歌备注\"}]}\n\n字段规则：\n- items 数量必须等于 {{请求曲数}}。\n- song 对象只能包含 title 和 artist 两个字段。\n- 不要输出 url、query、id、source、platform 或其他歌曲字段。\n- JSON 中所有字符串必须正确转义并完整闭合。"},{"group":"音乐源","key":"musicLibrary","type":"textarea-presets","label":"本地曲库（每行 JSON 或 歌名 | 歌手 | url | 标签）","rows":8,"variables":["{\"title\":\"歌名\",\"artist\":\"歌手\",\"url\":\"https://...mp3\",\"tags\":\"标签\"}"],"default":"{\"title\":\"示例歌曲\",\"artist\":\"可替换歌手\",\"url\":\"https://example.com/song.mp3\",\"tags\":\"安静,夜晚\",\"note\":\"把这一行换成真实可播放 mp3/flac/ogg 直链\"}\n歌名 | 歌手 | https://example.com/song.mp3 | 标签或备注"},{"group":"音乐偏好","key":"tasteDistillPrompt","type":"textarea-presets","label":"音乐偏好蒸馏提示词","rows":10,"variables":["{{用户输入}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放}}"],"default":"请根据用户输入、收藏曲目和最近播放记录，蒸馏出一个可以长期用于私人电台推荐的音乐偏好提示词。\n\n要求：\n1. 输出中文，80-220字。\n2. 不要写成列表，不要解释你的过程。\n3. 保留用户明确喜欢/不喜欢的曲风、语言、年代、情绪、节奏、歌手/作品倾向。\n4. 如果信息不足，就谨慎概括，不要编造。\n\n【用户输入】\n{{用户输入}}\n\n【已有偏好】\n{{音乐偏好}}\n\n【收藏曲目】\n{{收藏曲目}}\n\n【最近播放】\n{{最近播放}}"},{"group":"提示词","key":"scriptRewritePrompt","type":"textarea-presets","label":"收藏/手动曲目更新台本提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近主播对话}}","{{曲目列表}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在为已经确定要播放的曲目补写角色台词。不要推荐新歌，不要改变曲目，只给每首给定曲目写一段角色说给用户听的话。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在这个“陪你听歌”的小空间里。可以互相对话、一起跟用户聊天。不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【需要补台词的曲目】\n{{曲目列表}}\n\n写作方向：\n- 像角色陪 user 一起听这首歌，不要写成正式节目串场。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n- 可以回应最近聊天、剧情气氛、用户偏好，但语气要自然。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"scripts\":[{\"key\":\"{{曲目key}}\",\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n填写要求：\n- 每个 scripts 对象必须对应【需要补台词的曲目】里的一首歌，key 必须原样使用给定的曲目 key。\n- host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatPrompt","type":"textarea-presets","label":"主播连线聊天提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近播放曲目}}","{{聊天总结}}","{{最近主播对话}}","{{用户输入}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在扮演被用户选中的角色，和 {{用户名称}} 一边听歌一边聊天。这里只回复聊天内容，不推荐新曲目，不输出歌曲。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在聊天现场。可以一人回答，也可以多人接话互动；不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近播放曲目】\n{{最近播放曲目}}\n\n【已总结的聊天】\n{{聊天总结}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【用户刚说】\n{{用户输入}}\n\n写作方向：\n- 像角色本人直接回应 user，不要写成主持人连线、节目采访或正式播音。\n- 可以顺着正在听歌的氛围说，但重点是和 user 说话。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"replies\":[{\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n主持人存在多人的情况请让角色按场景自然参加。不要只一个人讲话。根据用户这句话和最近聊天，自然判断哪些主持人该说话：可以一个人说，也可以多人接话，也可以有人不发言；不要固定顺序，不要重复上一轮发言模式。用户 @ 到的主持人必须发言。\n\n填写要求：\n- replies 数量按场景自然决定，通常 1-3 条；每条 host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatSummaryPrompt","type":"textarea-presets","label":"主播对话记忆总结提示词","rows":5,"variables":["{{旧总结}}","{{对话内容}}"],"default":"请把私人电台主播与用户的旧对话整理成连续记忆摘要，保留用户偏好、情绪、承诺、重要剧情联系、刚才聊到的歌和主播表达过的态度。不要列表，不要解释，120-260字。\n\n【旧总结】\n{{旧总结}}\n\n【新增对话】\n{{对话内容}}"},{"group":"音乐源","key":"gdMusicApiBase","type":"text","label":"GD音乐台接口地址","default":"https://music-api.gdstudio.xyz/api.php","placeholder":"https://music-api.gdstudio.xyz/api.php"},{"group":"覆盖 API","key":"useOwnApi","type":"toggle","label":"启用自定义电台 API","default":false},{"group":"覆盖 API","key":"ownApiUrl","type":"text","label":"API 地址","default":"","placeholder":"https://api.example.com/v1"},{"group":"覆盖 API","key":"ownApiKey","type":"password","label":"API 密钥","default":""},{"group":"覆盖 API","key":"useOwnModel","type":"toggle","label":"使用自定义模型名","default":false},{"group":"覆盖 API","key":"ownModel","type":"text","label":"模型名","default":""},{"group":"生成参数","key":"temperature","type":"number","label":"Temperature","default":0.9,"min":0,"max":2},{"group":"生成参数","key":"maxTokens","type":"number","label":"最大输出 tokens <button type=\"button\" onclick=\"window._vnmRadioShowLastApi&&window._vnmRadioShowLastApi()\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.09);border:.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:11px;cursor:pointer;font-family:inherit;\">查看上次 API 返回</button>","default":20000,"min":256,"max":50000},{"group":"生成参数","key":"aiTimeoutMs","type":"number","label":"请求超时（秒）","default":300,"min":15,"max":600},{"group":"覆盖 TTS","key":"ttsProviderOverride","type":"select","label":"语音来源(本电台，留空则跟随全局)","options":[{"value":"","label":"跟随全局"},{"value":"minimax","label":"MiniMax"},{"value":"fishaudio","label":"Fish Audio"}],"default":""},{"group":"覆盖 TTS","key":"useOwnTts","type":"toggle","label":"使用自定义凭证(而非全局Key)","default":false},{"group":"覆盖 TTS","key":"ownTtsKey","type":"password","label":"MiniMax API Key","default":""},{"group":"覆盖 TTS","key":"ownTtsGid","type":"text","label":"MiniMax Group ID","default":""},{"group":"覆盖 TTS","key":"ownFishKey","type":"password","label":"Fish Audio API Key","default":""},{"group":"电台","key":"barAlbumGlass","type":"toggle","label":"第二形态专辑图液态玻璃遮罩","default":true},{"group":"歌词","key":"barLyrics","type":"toggle","label":"第二形态流动歌词显示","default":true},{"group":"歌词","key":"orbLyrics","type":"toggle","label":"第一形态侧边歌词显示","default":true},{"group":"歌词","key":"lyricsStyle","type":"select","label":"歌词动画样式","default":"fume","options":[{"v":"fume","l":"浮名（模糊聚焦）"},{"v":"lumi","l":"流光（逐行点亮）"},{"v":"stack","l":"云阶（层叠上升）"},{"v":"scroll","l":"简约滚动"}]},{"group":"电台","key":"keepModeOnVnExit","type":"toggle","label":"退出VN模式时保持当前形态（关=收回第一形态）","default":false},{"group":"电台","key":"autoRetry","type":"toggle","label":"请求失败自动重试","default":true},{"group":"电台","key":"retryCount","type":"number","label":"自动重试次数","default":2,"min":0,"max":10},{"group":"电台","key":"radioTtsEnabled","type":"toggle","label":"启用 TTS 语音（关闭后仅显示台本/字幕不请求语音）","default":true},{"group":"音乐偏好","key":"tasteEnabled","type":"toggle","label":"启用蒸馏结果（{{音乐偏好}}）","default":true},{"group":"电台","key":"leftCardImage","type":"text","label":"第三形态左侧播放栏背景图 URL（留空=当前专辑封面）","default":"","placeholder":"https://..."},{"group":"提示词","key":"artistChatPrompt","type":"textarea-presets","label":"Artist 私聊提示词（同电话 App）","default":"【回复格式（最高优先级，违反即不合格）】\n你的每条回复必须且只能使用下面这一种格式（需要多说几条就分成多行，每行一条）：\n[VoiceTag:{{角色名称}}:{{朗读语言}}:语音文本]“字幕文本”\n- 方括号内的“语音文本”必须整句使用 {{朗读语言}} 书写，这是发送给 TTS 朗读的内容。\n- 中文弯引号“ ”内的“字幕文本”必须整句使用 {{显示语言}} 书写，这是显示给用户看的字幕。\n- 语音文本与字幕文本是同一句话的两种语言版本，内容含义必须一一对应。\n- VoiceTag 格式不是 Markdown、不是 JSON、不是代码块；禁止输出 JSON 对象、```代码块、**加粗**、列表或任何解释。\n\n你正在扮演{{角色名称}}与{{用户名称}}进行对话。\n【角色设定】\n{{角色名称}}\n{{角色设定}}\n【用户设定】\n{{用户名称}}\n{{用户设定}}\n【世界背景信息】\n{{世界书}}\n【当前{{用户名称}}经历】\n{{酒馆历史}}\n【最近对话】\n{{对话内容}}\n请用简短自然的口语风格回复，20字以内，只说话不描述动作，不要输出任何额外内容。","rows":12,"variables":["{{角色名称}}","{{角色设定}}","{{用户名称}}","{{用户设定}}","{{世界书}}","{{酒馆历史}}","{{Horae总结}}","{{对话内容}}","{{用户输入}}","{{当前时间}}","{{朗读语言}}","{{显示语言}}"]},{"group":"电台","key":"artistDepth","type":"number","label":"Artist 私聊携带最大轮数","default":10,"min":0,"max":50},{"group":"电台","key":"artistInjectN","type":"number","label":"Artist 注入酒馆的最近条数","default":8,"min":1,"max":50}];
 
     FIELDS.forEach(function(f) {
 
@@ -8274,7 +8454,7 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
 
 
-    var CSSX = '.vnr2-pop{z-index:2147483647!important}.vnr2-chatpop{width:340px;max-height:440px;display:flex;flex-direction:column;gap:8px}.vnr2-chatpop .cp-list{max-height:310px;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;scrollbar-width:thin}.vnr2-chatpop .vnr2-bub{font-size:12px;padding:7px 10px;border-radius:14px}.vnr2-chatpop .cp-row{display:flex;gap:6px;align-items:flex-end}.vnr2-chatpop .cp-inp{flex:1;min-height:34px;max-height:80px;border-radius:17px;border:.5px solid rgba(255,255,255,.09);background:rgba(118,118,128,.22);color:#fff;font-size:12px;line-height:1.4;padding:8px 12px;outline:none;resize:none;font-family:inherit}.vnr2-chatpop .cp-btn{width:34px;height:34px;min-width:34px;border:none;border-radius:17px;background:rgba(118,118,128,.22);color:rgba(255,255,255,.9);cursor:pointer;display:flex;align-items:center;justify-content:center}.vnr2-chatpop .cp-btn svg{width:15px;height:15px}.vnr2-chatpop .cp-btn.send{background:rgba(255,255,255,.92);color:#1c1c1e}.vnr2-chatpop .cp-btn.rec{background:rgba(255,90,90,.35)}.vnr2-orb-lyr{position:fixed;z-index:2147483646;width:250px;pointer-events:none;display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.55);text-shadow:0 1px 4px rgba(0,0,0,.7)}.vnr2-ly{transition:opacity .45s ease,filter .45s ease,transform .45s cubic-bezier(.25,.9,.3,1);will-change:transform,opacity}.ly-fume .vnr2-ly{opacity:.34;filter:blur(1.6px);transform:scale(.97);transform-origin:left center}.ly-fume .vnr2-ly.cur{opacity:1;filter:none;transform:scale(1.04);color:#fff}.ly-stack .vnr2-ly{opacity:.25;transform:translateY(6px)}.ly-stack .vnr2-ly.near{opacity:.55;transform:translateY(3px)}.ly-stack .vnr2-ly.cur{opacity:1;transform:translateY(0);color:#fff}.ly-scroll .vnr2-ly{opacity:.5}.ly-scroll .vnr2-ly.cur{opacity:1;color:#fff;font-weight:700}.ly-lumi .vnr2-ly{opacity:.4}.ly-lumi .vnr2-ly.cur{opacity:1;-webkit-background-clip:text;background-clip:text;color:transparent}.vnr2-danger{width:100%;border:none;border-radius:14px;background:rgba(255,255,255,.10);border:.5px solid rgba(255,255,255,.22);color:rgba(255,255,255,.85);font-size:13px;font-weight:600;padding:12px;cursor:pointer;margin:4px 0 20px}.vnr2-preset{display:flex;gap:6px;align-items:center;margin:2px 0 10px;flex-wrap:wrap}.vnr2-preset select{flex:1;min-width:110px}.vnr2-pbtn{border:none;border-radius:10px;background:rgba(255,255,255,.10);border:.5px solid rgba(255,255,255,.16);color:rgba(255,255,255,.85);font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit}.vnr2-pbtn:active{transform:scale(.95)}.vnr2-wbl{display:flex;flex-direction:column;gap:4px;margin:4px 0 10px;max-height:200px;overflow:auto;scrollbar-width:thin}.vnr2-wbi{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer;font-size:12px;color:rgba(255,255,255,.88)}.vnr2-wbi .bx{width:16px;height:16px;min-width:16px;border-radius:5px;border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:10px}.vnr2-wbi.on .bx{background:rgba(255,255,255,.88);color:#111;border-color:transparent}.vnr2-status-row.err{cursor:pointer;color:rgba(255,255,255,.95)}.vnr2-lg{position:relative;isolation:isolate;overflow:hidden;border:none!important;background:var(--lg-tint,transparent)!important;box-shadow:0 calc(8px + var(--g-shadow,0)*.3px) calc(10px + var(--g-shadow,0)*.6px) rgba(0,0,0,calc(var(--g-shadow,0)/200))!important}'+
+    var CSSX = '.vnr2-pop{z-index:2147483647!important}.vnr2-chatpop{width:340px;max-height:440px;display:flex;flex-direction:column;gap:8px}.vnr2-chatpop .cp-list{max-height:310px;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px;scrollbar-width:thin}.vnr2-chatpop .vnr2-bub{font-size:12px;padding:7px 10px;border-radius:14px}.vnr2-chatpop .cp-row{display:flex;gap:6px;align-items:flex-end}.vnr2-chatpop .cp-inp{flex:1;min-height:34px;max-height:80px;border-radius:17px;border:.5px solid rgba(255,255,255,.09);background:rgba(118,118,128,.22);color:#fff;font-size:12px;line-height:1.4;padding:8px 12px;outline:none;resize:none;font-family:inherit}.vnr2-chatpop .cp-btn{width:34px;height:34px;min-width:34px;border:none;border-radius:17px;background:rgba(118,118,128,.22);color:rgba(255,255,255,.9);cursor:pointer;display:flex;align-items:center;justify-content:center}.vnr2-chatpop .cp-btn svg{width:15px;height:15px}.vnr2-chatpop .cp-btn.send{background:rgba(255,255,255,.92);color:#1c1c1e}.vnr2-chatpop .cp-btn.rec{background:rgba(255,90,90,.35)}.vnr2-orb-lyr{position:fixed;z-index:2147483646;width:250px;pointer-events:none;display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;line-height:1.5;color:rgba(255,255,255,.55);text-shadow:0 1px 4px rgba(0,0,0,.7)}.vnr2-ly{transition:opacity .45s ease,filter .45s ease,transform .45s cubic-bezier(.25,.9,.3,1);will-change:transform,opacity}.ly-fume .vnr2-ly{opacity:.34;filter:blur(1.6px);transform:scale(.97);transform-origin:left center}.ly-fume .vnr2-ly.cur{opacity:1;filter:none;transform:scale(1.04);color:#fff}.ly-stack .vnr2-ly{opacity:.25;transform:translateY(6px)}.ly-stack .vnr2-ly.near{opacity:.55;transform:translateY(3px)}.ly-stack .vnr2-ly.cur{opacity:1;transform:translateY(0);color:#fff}.ly-scroll .vnr2-ly{opacity:.5}.ly-scroll .vnr2-ly.cur{opacity:1;color:#fff;font-weight:700}.ly-lumi .vnr2-ly{opacity:.4}.ly-lumi .vnr2-ly.cur{opacity:1;-webkit-background-clip:text;background-clip:text;color:transparent}.vnr2-chat-status{font-size:11px;color:rgba(255,255,255,.45);padding:2px 4px;display:flex;align-items:center;gap:6px}.vnr2-chat-status.loading:before{content:\'\';width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);border-top-color:rgba(255,255,255,.85);animation:vnr2-chat-spin .8s linear infinite;display:inline-block}.vnr2-chat-status.error{color:rgba(255,120,120,.95)}.vnr2-danger{width:100%;border:none;border-radius:14px;background:rgba(255,255,255,.10);border:.5px solid rgba(255,255,255,.22);color:rgba(255,255,255,.85);font-size:13px;font-weight:600;padding:12px;cursor:pointer;margin:4px 0 20px}.vnr2-preset{display:flex;gap:6px;align-items:center;margin:2px 0 10px;flex-wrap:wrap}.vnr2-preset select{flex:1;min-width:110px}.vnr2-pbtn{border:none;border-radius:10px;background:rgba(255,255,255,.10);border:.5px solid rgba(255,255,255,.16);color:rgba(255,255,255,.85);font-size:11px;padding:6px 10px;cursor:pointer;font-family:inherit}.vnr2-pbtn:active{transform:scale(.95)}.vnr2-wbl{display:flex;flex-direction:column;gap:4px;margin:4px 0 10px;max-height:200px;overflow:auto;scrollbar-width:thin}.vnr2-wbi{display:flex;gap:10px;align-items:center;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer;font-size:12px;color:rgba(255,255,255,.88)}.vnr2-wbi .bx{width:16px;height:16px;min-width:16px;border-radius:5px;border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:10px}.vnr2-wbi.on .bx{background:rgba(255,255,255,.88);color:#111;border-color:transparent}.vnr2-status-row.err{cursor:pointer;color:rgba(255,255,255,.95)}.vnr2-lg{position:relative;isolation:isolate;overflow:hidden;border:none!important;background:var(--lg-tint,transparent)!important;box-shadow:0 calc(8px + var(--g-shadow,0)*.3px) calc(10px + var(--g-shadow,0)*.6px) rgba(0,0,0,calc(var(--g-shadow,0)/200))!important}'+
 
         '.vnr2-lg::before{content:\'\';position:absolute;inset:0;border-radius:inherit;-webkit-backdrop-filter:var(--lg-bf,blur(1px) saturate(150%) brightness(105%) contrast(100%));backdrop-filter:var(--lg-bf,blur(1px) saturate(150%) brightness(105%) contrast(100%));z-index:0;pointer-events:none}'+
 
@@ -16473,6 +16653,16 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
             });
 
+            if (eng.chatBusy) {
+
+                list.appendChild(E('div', 'vnr2-chat-status loading', '主播正在回复…'));
+
+            } else if (eng.apiStatus && eng.apiStatus.state === 'error' && eng.apiStatus.type === 'chat' && eng.apiStatus.error) {
+
+                list.appendChild(E('div', 'vnr2-chat-status error', '回复失败：' + eng.apiStatus.error));
+
+            }
+
             chatPop.appendChild(list);
 
             var row = E('div', 'cp-row');
@@ -17416,6 +17606,16 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
                 chatBox.appendChild(row);
 
             });
+
+            if (eng.chatBusy) {
+
+                chatBox.appendChild(E('div', 'vnr2-chat-status loading', '主播正在回复…'));
+
+            } else if (eng.apiStatus && eng.apiStatus.state === 'error' && eng.apiStatus.type === 'chat' && eng.apiStatus.error) {
+
+                chatBox.appendChild(E('div', 'vnr2-chat-status error', '回复失败：' + eng.apiStatus.error));
+
+            }
 
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -21559,6 +21759,8 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
         if (version) {
 
+            ops.appendChild(button('语言检测修复', function() { _manualLangFix(version, _selectedHosts(eng.store || {})); }));
+
             ops.appendChild(button(playingThis ? '重新播放' : '整体播放', function() { v3.playContinuous(version.id); }));
 
             ops.appendChild(button(version.favorite ? '★ 已收藏' : '☆ 收藏台本', function() {
@@ -22263,53 +22465,7 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
         save.appendChild(button('语言检测修复', function() {
 
-            var nodes = version.nodes || [];
-
-            var hosts = _selectedHosts(eng.store || {});
-
-            var need = _scanLangNeed(nodes, hosts);
-
-            if (!need.length) {
-
-                /* 明确反馈：弹窗告知检查通过，避免"点了没反应" */
-                if (TOP.confirm) TOP.confirm('语言检查完成：全部台词语言符合角色设置，无需修复。');
-
-                else _toast('语言检查通过，无需修复');
-
-                return;
-
-            }
-
-            var brief = need.map(function(f) { return f.idx + 1 + '.' + f.host + '（' + f.why + '）'; }).join(' ');
-
-            if (TOP.confirm && !TOP.confirm('检测到 ' + need.length + ' 处语言不符，将按角色语言重写：\n' + brief + '\n\n确认执行？')) return;
-
-            _toast('正在按角色语言重写 ' + need.length + ' 处…');
-
-            _fixLangNodes(nodes, hosts, { auto: false }, function(res) {
-
-                if (res.status === 'done') {
-
-                    version.edited = true;
-
-                    v3.save();
-
-                    refreshContinuous();
-
-                    _toast('语言修复完成：更新 ' + res.fixed + ' 段朗读文本，台本已保存' + ((res.missed && res.missed.length) ? '（' + res.missed.length + ' 段未匹配，可再点一次重试）' : ''));
-
-                } else if (res.status === 'failed') {
-
-                    _setApiStatus('error', 'langFix', '语言修复失败', res.error || '', '可点“查看上次 API 返回”查看详情');
-
-                    /* 明确反馈：失败弹窗显示错误（用户要求修复失败要有可见提醒） */
-                    if (TOP.confirm) TOP.confirm('语言修复失败：' + (res.error || '未知错误') + '\n\n可点设置里「查看上次 API 返回」查看请求详情。');
-
-                    else _toast('语言修复失败：' + (res.error || ''));
-
-                }
-
-            });
+            _manualLangFix(version, _selectedHosts(eng.store || {}));
 
         }, 'primary'));
 

@@ -739,7 +739,10 @@
           +'#pp-screen input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.20);box-shadow:inset 0 1px 1px rgba(0,0,0,.25);}'
           +'#pp-screen input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;margin-top:-7px;border:none;box-shadow:0 1px 5px rgba(0,0,0,.45),inset 0 -1px 1px rgba(0,0,0,.08);cursor:pointer;}'
           +'#pp-screen input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.20);}'
-          +'#pp-screen input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 5px rgba(0,0,0,.45);cursor:pointer;}';
+          +'#pp-screen input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 5px rgba(0,0,0,.45);cursor:pointer;}'
+          /* 移动端适配：窄屏下面板自适应尺寸并居中（参考酒馆 mobile-styles 断点 1000px/450px） */
+          +'@media screen and (max-width:1000px) and (min-width:451px){#pp-panel{max-width:calc(100vw - 16px)!important;max-height:calc(100vh - 16px)!important;max-height:calc(100dvh - 16px)!important;}}'
+          +'@media screen and (max-width:450px){#pp-panel{width:calc(100vw - 10px)!important;height:calc(100vh - 10px)!important;height:calc(100dvh - 10px)!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;border-radius:22px!important;}#pp-glass{border-radius:22px!important;}#pp-fab{width:46px!important;height:46px!important;}.ppgrid{gap:10px!important;padding:6px 10px 12px!important;}.pphome{gap:16px 6px!important;padding:8px 10px 14px!important;}.ppcard{margin-left:10px!important;margin-right:10px!important;}.ppnav{padding-left:10px!important;padding-right:10px!important;}.ppnav-title{font-size:18px!important;}.pprow{padding-left:12px!important;padding-right:12px!important;}}';
         TOPDOC.head.appendChild(_s);
       }
       /* Liquid Glass SVG Filter (once) */
@@ -1089,13 +1092,15 @@
          通讯录 – iOS Contacts Style
       ════════════════════════════════════════════════════ */
       /* 全局：按首字母分组（英文按首字母，中文按拼音首字母） */
-      var PINYIN_MAP={'薇':'W','八':'B','艾':'A','萨':'S','零':'L','梅':'M','神':'S','亚':'Y'};
+      /* 全局：按首字母分组（英文按首字母，中文按拼音首字母，未命中/数字归 #） */
+      var PINYIN_MAP={阿:'A',安:'A',艾:'A',爱:'A',奥:'A',敖:'A',白:'B',柏:'B',班:'B',毕:'B',冰:'B',波:'B',博:'B',彬:'B',斌:'B',宝:'B',北:'B',碧:'B',本:'B',伯:'B',邦:'B',八:'B',蔡:'C',曹:'C',陈:'C',程:'C',成:'C',崔:'C',超:'C',晨:'C',春:'C',纯:'C',聪:'C',川:'C',传:'C',灿:'C',采:'C',慈:'C',池:'C',常:'C',昌:'C',辰:'C',楚:'C',城:'C',诚:'C',戴:'D',邓:'D',丁:'D',董:'D',杜:'D',段:'D',东:'D',德:'D',丹:'D',典:'D',蝶:'D',鼎:'D',栋:'D',达:'D',大:'D',道:'D',樊:'F',范:'F',方:'F',冯:'F',傅:'F',飞:'F',峰:'F',锋:'F',芳:'F',菲:'F',芬:'F',凤:'F',福:'F',甫:'F',枫:'F',凡:'F',发:'F',富:'F',高:'G',郭:'G',顾:'G',龚:'G',国:'G',刚:'G',光:'G',广:'G',桂:'G',冠:'G',功:'G',观:'G',果:'G',歌:'G',格:'G',韩:'H',何:'H',胡:'H',黄:'H',侯:'H',华:'H',贺:'H',郝:'H',洪:'H',霍:'H',惠:'H',海:'H',浩:'H',涵:'H',航:'H',豪:'H',鸿:'H',红:'H',辉:'H',慧:'H',会:'H',虹:'H',河:'H',和:'H',虎:'H',瀚:'H',怀:'H',欢:'H',环:'H',焕:'H',纪:'J',江:'J',姜:'J',蒋:'J',金:'J',景:'J',贾:'J',焦:'J',杰:'J',佳:'J',家:'J',嘉:'J',建:'J',剑:'J',健:'J',军:'J',君:'J',俊:'J',静:'J',晶:'J',锦:'J',津:'J',娟:'J',洁:'J',进:'J',京:'J',经:'J',精:'J',九:'J',居:'J',菊:'J',吉:'J',季:'J',坚:'J',康:'K',孔:'K',柯:'K',凯:'K',可:'K',科:'K',坤:'K',昆:'K',楷:'K',赖:'L',雷:'L',李:'L',梁:'L',廖:'L',林:'L',刘:'L',柳:'L',龙:'L',卢:'L',陆:'L',罗:'L',吕:'L',凌:'L',黎:'L',丽:'L',磊:'L',兰:'L',蓝:'L',朗:'L',乐:'L',琳:'L',麟:'L',灵:'L',露:'L',路:'L',洛:'L',澜:'L',莲:'L',霖:'L',亮:'L',良:'L',立:'L',力:'L',里:'L',礼:'L',临:'L',伦:'L',绿:'L',鹿:'L',连:'L',零:'L',马:'M',毛:'M',孟:'M',莫:'M',牟:'M',穆:'M',美:'M',梦:'M',明:'M',敏:'M',名:'M',民:'M',慕:'M',梅:'M',曼:'M',漫:'M',苗:'M',妙:'M',木:'M',沐:'M',默:'M',墨:'M',鸣:'M',萌:'M',倪:'N',牛:'N',聂:'N',宁:'N',娜:'N',南:'N',念:'N',凝:'N',欧:'O',区:'O',潘:'P',彭:'P',皮:'P',平:'P',庞:'P',裴:'P',鹏:'P',萍:'P',品:'P',普:'P',浦:'P',谱:'P',齐:'Q',秦:'Q',邱:'Q',钱:'Q',强:'Q',乔:'Q',清:'Q',青:'Q',晴:'Q',庆:'Q',启:'Q',琪:'Q',茜:'Q',倩:'Q',全:'Q',群:'Q',秋:'Q',曲:'Q',屈:'Q',勤:'Q',琴:'Q',琼:'Q',泉:'Q',乾:'Q',巧:'Q',前:'Q',千:'Q',桥:'Q',任:'R',荣:'R',阮:'R',然:'R',日:'R',瑞:'R',睿:'R',润:'R',若:'R',柔:'R',融:'R',仁:'R',人:'R',容:'R',孙:'S',沈:'S',宋:'S',苏:'S',邵:'S',施:'S',石:'S',史:'S',舒:'S',帅:'S',司:'S',盛:'S',尚:'S',申:'S',沙:'S',山:'S',珊:'S',森:'S',诗:'S',世:'S',士:'S',树:'S',书:'S',霜:'S',双:'S',水:'S',顺:'S',思:'S',松:'S',素:'S',硕:'S',所:'S',述:'S',胜:'S',圣:'S',生:'S',声:'S',深:'S',神:'S',萨:'S',谭:'T',唐:'T',汤:'T',陶:'T',田:'T',童:'T',涂:'T',滕:'T',天:'T',婷:'T',涛:'T',泰:'T',同:'T',桐:'T',通:'T',挺:'T',铁:'T',图:'T',途:'T',团:'T',万:'W',汪:'W',王:'W',韦:'W',魏:'W',温:'W',文:'W',吴:'W',伍:'W',武:'W',卫:'W',伟:'W',维:'W',威:'W',旺:'W',望:'W',为:'W',唯:'W',薇:'W',婉:'W',晚:'W',蔚:'W',吾:'W',五:'W',午:'W',无:'W',舞:'W',悟:'W',夏:'X',肖:'X',谢:'X',徐:'X',许:'X',熊:'X',薛:'X',辛:'X',邢:'X',向:'X',项:'X',席:'X',奚:'X',习:'X',喜:'X',西:'X',希:'X',溪:'X',熙:'X',霞:'X',仙:'X',贤:'X',显:'X',现:'X',相:'X',香:'X',祥:'X',翔:'X',晓:'X',孝:'X',笑:'X',心:'X',欣:'X',新:'X',信:'X',星:'X',行:'X',醒:'X',秀:'X',修:'X',虚:'X',雪:'X',学:'X',宣:'X',玄:'X',选:'X',绚:'X',勋:'X',寻:'X',讯:'X',迅:'X',严:'Y',杨:'Y',姚:'Y',叶:'Y',易:'Y',殷:'Y',尹:'Y',袁:'Y',岳:'Y',云:'Y',俞:'Y',余:'Y',于:'Y',尤:'Y',游:'Y',颜:'Y',阎:'Y',晏:'Y',阳:'Y',洋:'Y',扬:'Y',燕:'Y',艳:'Y',雁:'Y',耀:'Y',业:'Y',野:'Y',夜:'Y',一:'Y',伊:'Y',依:'Y',仪:'Y',宜:'Y',义:'Y',艺:'Y',忆:'Y',译:'Y',益:'Y',毅:'Y',音:'Y',银:'Y',英:'Y',迎:'Y',盈:'Y',影:'Y',勇:'Y',永:'Y',咏:'Y',友:'Y',有:'Y',右:'Y',宇:'Y',雨:'Y',语:'Y',玉:'Y',育:'Y',悦:'Y',月:'Y',越:'Y',跃:'Y',源:'Y',远:'Y',元:'Y',园:'Y',愿:'Y',韵:'Y',蕴:'Y',允:'Y',运:'Y',亚:'Y',臧:'Z',曾:'Z',翟:'Z',詹:'Z',张:'Z',章:'Z',赵:'Z',郑:'Z',钟:'Z',周:'Z',朱:'Z',庄:'Z',邹:'Z',卓:'Z',祝:'Z',诸:'Z',祖:'Z',左:'Z',宗:'Z',志:'Z',智:'Z',哲:'Z',泽:'Z',珍:'Z',真:'Z',振:'Z',震:'Z',正:'Z',政:'Z',之:'Z',芝:'Z',知:'Z',直:'Z',植:'Z',至:'Z',制:'Z',中:'Z',忠:'Z',众:'Z',舟:'Z',洲:'Z',竹:'Z',主:'Z',柱:'Z',著:'Z',追:'Z',准:'Z',子:'Z',紫:'Z',自:'Z',字:'Z',综:'Z',总:'Z',足:'Z',族:'Z',组:'Z',最:'Z',尊:'Z',昨:'Z',作:'Z',坐:'Z',座:'Z'};
       function _firstLetter(s){
         s=(s||'').trim();if(!s)return '#';
         var c=s.charAt(0);var cu=c.toUpperCase();
         if(cu>='A'&&cu<='Z')return cu;
-        if(PINYIN_MAP[c])return PINYIN_MAP[c];
-        return '#';
+        var cc=c.charCodeAt(0);
+        if(cc>=48&&cc<=57)return '#';
+        return PINYIN_MAP[c]||'#';
       }
       /* Avatar helper: colored circle with initial or image */
       function _mkAvatar(name,avatarUrl,size){
@@ -3223,6 +3228,12 @@
         var _s = TOP._ppscr;
         if(!_s) return;
         var oldEl = _s.lastElementChild;
+        /* 记录滚动位置：无动画刷新后恢复，避免 TTS 设置等场景改完跳回页面顶部 */
+        var _scrollTop = 0;
+        if(oldEl){
+          var _scOld = oldEl.querySelector('div[style*="overflow-y:auto"]');
+          if(_scOld) _scrollTop = _scOld.scrollTop;
+        }
         try{
           (_pages[_nav.page] || _pgHome)();
         }catch(e){
@@ -3230,9 +3241,16 @@
           return;
         }
         var newEl = _s.lastElementChild;
+        // 无动画刷新：移除新页的滑入动画 class，避免重建后 .ppsl 自动播放（TTS 设置改动/世界书拉取完成等场景的“弹动画”）
+        if(newEl) newEl.classList.remove('ppsl');
         // 直接删掉旧元素，不做任何动画
         if(oldEl && oldEl !== newEl && oldEl.parentNode){
           oldEl.parentNode.removeChild(oldEl);
+        }
+        /* 恢复滚动位置 */
+        if(_scrollTop > 0 && newEl){
+          var _scNew = newEl.querySelector('div[style*="overflow-y:auto"]');
+          if(_scNew) _scNew.scrollTop = _scrollTop;
         }
       }
       // 暴露给外层（_pullSTUser/_pullAllWorldBooks 等在更外层作用域，访问不到本层函数）
@@ -3784,6 +3802,8 @@
     }
     // 拉取所有世界书
     function _pullAllWorldBooks(silent){
+      if(_ui.wbLoading) return; // 拉取中忽略重复请求（世界书首次打开会被多处同时触发，避免连刷重绘）
+      _ui.wbLoading=true;
       try{
         var ctx=_getSTCtx(); if(!ctx) throw new Error('无法访问 SillyTavern');
         
@@ -3804,6 +3824,7 @@
           _sbS.wbBooks=[];
           _W();
           if(!silent)_toast('酒馆里没有世界书');
+          _ui.wbLoading=false;
           return;
         }
         
@@ -3893,13 +3914,16 @@
           _W();
           // 无动画刷新当前世界书页面
           if(TOP._pprefresh)TOP._pprefresh(); else if(typeof _refreshNoAnim === 'function') _refreshNoAnim();
+          _ui.wbLoading=false;
           if(!silent)_toast('✓ 已加载 '+books.length+' 本世界书，共 '+totalEntries+' 条条目');
         }).catch(function(err){
+          _ui.wbLoading=false;
           console.error('[PP] 拉取世界书失败:', err);
           if(!silent)_toast('拉取失败: '+(err&&err.message?err.message:String(err)));
         });
         
       }catch(e){
+        _ui.wbLoading=false;
         console.error('[PP] 拉取世界书失败:', e);
         if(!silent)_toast('拉取失败: '+e.message);
       }

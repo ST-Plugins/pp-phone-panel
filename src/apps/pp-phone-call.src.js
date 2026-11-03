@@ -569,35 +569,58 @@ function _showConfirm(msg,onYes){
 
 /* ══ CONTACTS ══ */
 
+/* 中文名按拼音首字母分组：内嵌精简映射（覆盖常见姓/名用字），未命中兜底归 # */
+var _PY_FIRST={阿:'A',安:'A',艾:'A',爱:'A',奥:'A',敖:'A',白:'B',柏:'B',班:'B',毕:'B',冰:'B',波:'B',博:'B',彬:'B',斌:'B',宝:'B',北:'B',碧:'B',本:'B',伯:'B',邦:'B',蔡:'C',曹:'C',陈:'C',程:'C',成:'C',崔:'C',超:'C',晨:'C',春:'C',纯:'C',聪:'C',川:'C',传:'C',灿:'C',采:'C',慈:'C',池:'C',常:'C',昌:'C',辰:'C',楚:'C',城:'C',诚:'C',聪:'C',戴:'D',邓:'D',丁:'D',董:'D',杜:'D',段:'D',东:'D',德:'D',丹:'D',典:'D',蝶:'D',鼎:'D',栋:'D',达:'D',大:'D',道:'D',樊:'F',范:'F',方:'F',冯:'F',傅:'F',飞:'F',峰:'F',锋:'F',芳:'F',菲:'F',芬:'F',凤:'F',福:'F',甫:'F',枫:'F',凡:'F',发:'F',富:'F',高:'G',郭:'G',顾:'G',龚:'G',国:'G',刚:'G',光:'G',广:'G',桂:'G',冠:'G',功:'G',观:'G',果:'G',歌:'G',格:'G',韩:'H',何:'H',胡:'H',黄:'H',侯:'H',华:'H',贺:'H',郝:'H',洪:'H',霍:'H',惠:'H',海:'H',浩:'H',涵:'H',航:'H',豪:'H',鸿:'H',红:'H',辉:'H',慧:'H',会:'H',虹:'H',河:'H',和:'H',虎:'H',瀚:'H',怀:'H',欢:'H',环:'H',焕:'H',纪:'J',江:'J',姜:'J',蒋:'J',金:'J',景:'J',贾:'J',焦:'J',杰:'J',佳:'J',家:'J',嘉:'J',建:'J',剑:'J',健:'J',军:'J',君:'J',俊:'J',静:'J',晶:'J',锦:'J',津:'J',娟:'J',洁:'J',进:'J',京:'J',经:'J',精:'J',九:'J',居:'J',菊:'J',吉:'J',季:'J',坚:'J',剑:'J',健:'J',康:'K',孔:'K',柯:'K',凯:'K',可:'K',科:'K',坤:'K',昆:'K',楷:'K',赖:'L',雷:'L',李:'L',梁:'L',廖:'L',林:'L',刘:'L',柳:'L',龙:'L',卢:'L',陆:'L',罗:'L',吕:'L',凌:'L',黎:'L',丽:'L',磊:'L',兰:'L',蓝:'L',朗:'L',乐:'L',琳:'L',麟:'L',灵:'L',露:'L',路:'L',洛:'L',澜:'L',莲:'L',霖:'L',亮:'L',良:'L',立:'L',力:'L',里:'L',礼:'L',临:'L',伦:'L',绿:'L',鹿:'L',连:'L',马:'M',毛:'M',孟:'M',莫:'M',牟:'M',穆:'M',美:'M',梦:'M',明:'M',敏:'M',名:'M',民:'M',慕:'M',梅:'M',曼:'M',漫:'M',苗:'M',妙:'M',木:'M',沐:'M',默:'M',墨:'M',鸣:'M',萌:'M',倪:'N',牛:'N',聂:'N',宁:'N',娜:'N',南:'N',念:'N',凝:'N',欧:'O',区:'O',潘:'P',彭:'P',皮:'P',平:'P',庞:'P',裴:'P',鹏:'P',萍:'P',品:'P',普:'P',浦:'P',谱:'P',齐:'Q',秦:'Q',邱:'Q',钱:'Q',强:'Q',乔:'Q',清:'Q',青:'Q',晴:'Q',庆:'Q',启:'Q',琪:'Q',茜:'Q',倩:'Q',全:'Q',群:'Q',秋:'Q',曲:'Q',屈:'Q',勤:'Q',琴:'Q',琼:'Q',泉:'Q',乾:'Q',巧:'Q',前:'Q',千:'Q',桥:'Q',任:'R',荣:'R',阮:'R',然:'R',日:'R',瑞:'R',睿:'R',润:'R',若:'R',柔:'R',融:'R',仁:'R',人:'R',容:'R',孙:'S',沈:'S',宋:'S',苏:'S',邵:'S',施:'S',石:'S',史:'S',舒:'S',帅:'S',司:'S',盛:'S',尚:'S',申:'S',沙:'S',山:'S',珊:'S',森:'S',诗:'S',世:'S',士:'S',树:'S',书:'S',霜:'S',双:'S',水:'S',顺:'S',思:'S',松:'S',素:'S',硕:'S',所:'S',述:'S',胜:'S',圣:'S',生:'S',声:'S',深:'S',神:'S',谭:'T',唐:'T',汤:'T',陶:'T',田:'T',童:'T',涂:'T',滕:'T',天:'T',婷:'T',涛:'T',泰:'T',同:'T',桐:'T',通:'T',挺:'T',铁:'T',图:'T',途:'T',团:'T',万:'W',汪:'W',王:'W',韦:'W',魏:'W',温:'W',文:'W',吴:'W',伍:'W',武:'W',卫:'W',伟:'W',维:'W',威:'W',旺:'W',望:'W',为:'W',唯:'W',薇:'W',婉:'W',晚:'W',蔚:'W',吾:'W',五:'W',午:'W',无:'W',舞:'W',悟:'W',夏:'X',肖:'X',谢:'X',徐:'X',许:'X',熊:'X',薛:'X',辛:'X',邢:'X',向:'X',项:'X',席:'X',奚:'X',习:'X',喜:'X',西:'X',希:'X',溪:'X',熙:'X',霞:'X',仙:'X',贤:'X',显:'X',现:'X',相:'X',香:'X',祥:'X',翔:'X',晓:'X',孝:'X',笑:'X',心:'X',欣:'X',新:'X',信:'X',星:'X',行:'X',醒:'X',秀:'X',修:'X',虚:'X',雪:'X',学:'X',宣:'X',玄:'X',选:'X',绚:'X',勋:'X',寻:'X',讯:'X',迅:'X',严:'Y',杨:'Y',姚:'Y',叶:'Y',易:'Y',殷:'Y',尹:'Y',袁:'Y',岳:'Y',云:'Y',俞:'Y',余:'Y',于:'Y',尤:'Y',游:'Y',颜:'Y',阎:'Y',晏:'Y',阳:'Y',洋:'Y',扬:'Y',燕:'Y',艳:'Y',雁:'Y',耀:'Y',业:'Y',野:'Y',夜:'Y',一:'Y',伊:'Y',依:'Y',仪:'Y',宜:'Y',义:'Y',艺:'Y',忆:'Y',译:'Y',益:'Y',毅:'Y',音:'Y',银:'Y',英:'Y',迎:'Y',盈:'Y',影:'Y',勇:'Y',永:'Y',咏:'Y',友:'Y',有:'Y',右:'Y',宇:'Y',雨:'Y',语:'Y',玉:'Y',育:'Y',悦:'Y',月:'Y',越:'Y',跃:'Y',源:'Y',远:'Y',元:'Y',园:'Y',愿:'Y',韵:'Y',蕴:'Y',允:'Y',运:'Y',臧:'Z',曾:'Z',翟:'Z',詹:'Z',张:'Z',章:'Z',赵:'Z',郑:'Z',钟:'Z',周:'Z',朱:'Z',庄:'Z',邹:'Z',卓:'Z',祝:'Z',诸:'Z',祖:'Z',左:'Z',宗:'Z',志:'Z',智:'Z',哲:'Z',泽:'Z',珍:'Z',真:'Z',振:'Z',震:'Z',正:'Z',政:'Z',之:'Z',芝:'Z',知:'Z',直:'Z',植:'Z',至:'Z',制:'Z',中:'Z',忠:'Z',众:'Z',舟:'Z',洲:'Z',竹:'Z',主:'Z',柱:'Z',著:'Z',追:'Z',准:'Z',子:'Z',紫:'Z',自:'Z',字:'Z',综:'Z',总:'Z',足:'Z',族:'Z',组:'Z',最:'Z',尊:'Z',昨:'Z',作:'Z',坐:'Z',座:'Z'};
+function _pyFirst(nm){var c=(nm||'').charAt(0);if(!c)return'#';var cc=c.charCodeAt(0);if(cc>=65&&cc<=90)return c;if(cc>=97&&cc<=122)return c.toUpperCase();if(cc>=48&&cc<=57)return'#';return _PY_FIRST[c]||'#';}
+
 function _viewContacts(){
   var wrap=_div('');wrap.style.cssText='flex:1;min-height:0;overflow-y:auto;padding:0 0 16px;';
-  var chars=sbS.characters||[];
+  /* 仅显示已添加好友（isFriend）：未加进通讯录的角色不进电话 */
+  var chars=(sbS.characters||[]).filter(function(c){return c&&c.isFriend;});
   if(!chars.length){
-    wrap.appendChild(_div('padding:48px 20px;text-align:center;font-size:13px;color:rgba(255,255,255,.25);','请先在「通讯录」App 中添加角色'));
+    wrap.appendChild(_div('padding:48px 20px;text-align:center;font-size:13px;color:rgba(255,255,255,.25);','暂无联系人，先去通讯录添加好友'));
     return wrap;
   }
-  var card=_div('');
-  chars.forEach(function(ch,ci){
-    var row=_div('ph4-row');row.style.cursor='pointer';
-    row.appendChild(_mkAv(ch.name,ch.avatar,40));
-    var rb=_div('flex:1;min-width:0;');
-    /* 在线/离线：顺色，不用绿色 */
-    var onlineTxt=ch.ttsEnabled?'在线':'离线';
-    var onlineAlpha=ch.ttsEnabled?'rgba(255,255,255,.65)':'rgba(255,255,255,.28)';
-    rb.innerHTML='<div style="font-size:15px;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_esc(ch.name)+'</div>'
-      +'<div style="font-size:11px;color:'+onlineAlpha+';margin-top:1px;">'+onlineTxt+'</div>'
-      +((ch.wbIds&&ch.wbIds.length)?'<div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:1px;">已绑定世界书</div>':'');
-    var cb=_div('');
-    cb.style.cssText='width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);';
-    var svgPhone='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.70)" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.69A2 2 0 012 .9h3a2 2 0 012 1.72 13 13 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 13 13 0 002.81.7A2 2 0 0122 16.92z"/></svg>';
-    cb.innerHTML=svgPhone;
-    cb.addEventListener('mouseenter',function(){cb.style.background='rgba(255,255,255,.16)';});
-    cb.addEventListener('mouseleave',function(){cb.style.background='rgba(255,255,255,.08)';});
-    cb.addEventListener('click',function(e){e.stopPropagation();_startCall(ch,[]);});
-    row.addEventListener('click',function(){_startCall(ch,[]);});
-    row.appendChild(rb);row.appendChild(cb);card.appendChild(row);
+  /* 在线（ttsEnabled）角色置顶；同组内按中文名排序 */
+  var _lst=chars.slice().sort(function(a,b){
+    var ao=a&&a.ttsEnabled?1:0,bo=b&&b.ttsEnabled?1:0;
+    if(ao!==bo)return bo-ao;
+    return String(a.name||'').localeCompare(String(b.name||''),'zh-Hans-CN');
   });
-  wrap.appendChild(card);return wrap;
+  /* 按首字母 A-Z 分组（中文按拼音首字母），未命中归 # */
+  var groups={},order=[];
+  _lst.forEach(function(ch){
+    var ltr=_pyFirst(ch.name||'');
+    if(!groups[ltr]){groups[ltr]=[];order.push(ltr);}
+    groups[ltr].push(ch);
+  });
+  order.sort(function(a,b){return a<b?-1:a>b?1:0;});
+  order.forEach(function(ltr){
+    var gd=_div('');gd.style.cssText='padding:0 2px;';
+    gd.appendChild(_div('padding:14px 16px 4px;font-size:12px;color:rgba(255,255,255,.38);font-weight:600;letter-spacing:1px;',ltr));
+    groups[ltr].forEach(function(ch){
+      var row=_div('ph4-row');row.style.cursor='pointer';
+      row.appendChild(_mkAv(ch.name,ch.avatar,40));
+      var rb=_div('flex:1;min-width:0;');
+      /* 在线/离线：顺色，不用绿色 */
+      var onlineTxt=ch.ttsEnabled?'在线':'离线';
+      var onlineAlpha=ch.ttsEnabled?'rgba(255,255,255,.65)':'rgba(255,255,255,.28)';
+      rb.innerHTML='<div style="font-size:15px;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_esc(ch.name)+'</div>'
+        +'<div style="font-size:11px;color:'+onlineAlpha+';margin-top:1px;">'+onlineTxt+'</div>'
+        +((ch.wbIds&&ch.wbIds.length)?'<div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:1px;">已绑定世界书</div>':'');
+      var cb=_div('');
+      cb.style.cssText='width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);';
+      var svgPhone='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.70)" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.69A2 2 0 012 .9h3a2 2 0 012 1.72 13 13 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 13 13 0 002.81.7A2 2 0 0122 16.92z"/></svg>';
+      cb.innerHTML=svgPhone;
+      cb.addEventListener('mouseenter',function(){cb.style.background='rgba(255,255,255,.16)';});
+      cb.addEventListener('mouseleave',function(){cb.style.background='rgba(255,255,255,.08)';});
+      cb.addEventListener('click',function(e){e.stopPropagation();_startCall(ch,[]);});
+      row.addEventListener('click',function(){_startCall(ch,[]);});
+      row.appendChild(rb);row.appendChild(cb);gd.appendChild(row);
+    });
+    wrap.appendChild(gd);
+  });
+  return wrap;
 }
 
 
