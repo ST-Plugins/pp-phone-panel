@@ -166,7 +166,7 @@
       loadBuiltinApps(function() {
         console.log('[PP] init...');
         /* 内置 app 脚本为异步加载，此刻才全部执行完：再同步一次，确保 pageCode 更新能落盘 */
-        try { _syncBuiltinApps(); } catch (e) { console.warn('[PP] app sync error:', e); }
+        try { window.__ppSyncBuiltinApps && window.__ppSyncBuiltinApps(); } catch (e) { console.warn('[PP] app sync error:', e); }
 
   (function setupStatusBar(){
     try {
@@ -356,6 +356,7 @@
       return updatedCount;
     }
     _syncBuiltinApps();
+    window.__ppSyncBuiltinApps = _syncBuiltinApps;
     var _ui={settingsOpen:false,tab:'api',loading:false,charIdx:0,histIdx:{},editPresetId:null,editCharId:null,wbCollapsed:{}};
     function _uuid(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
     function _esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}

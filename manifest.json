@@ -1,9 +1,9 @@
 {
   "display_name": "PP-小手机",
   "loading_order": 101,
-  "js": "extension/index.js?cb=20261104-jpname",
+  "js": "extension/index.js?cb=20261104-queuefix",
   "css": "extension/style.css",
   "author": "zzzu",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homePage": ""
 }
