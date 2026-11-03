@@ -2526,10 +2526,6 @@
 
     }
 
-        next();
-
-    }
-
 
 
     function _returnBrief(t) {
