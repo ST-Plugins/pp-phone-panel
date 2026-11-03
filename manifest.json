@@ -1,9 +1,9 @@
 {
   "display_name": "PP-小手机",
   "loading_order": 101,
-  "js": "extension/index.js?cb=20261103-timeoutfix",
+  "js": "extension/index.js?cb=20261104-jpname",
   "css": "extension/style.css",
   "author": "zzzu",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "homePage": ""
 }

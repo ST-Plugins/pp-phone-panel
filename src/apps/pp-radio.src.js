@@ -9,7 +9,7 @@
 {
   "id": "pp-radio",
   "name": "电台",
-  "version": "3.10.12-timeoutfix",
+  "version": "3.10.13-callfix",
   "description": "多主持人私人电台 · 陪伴模式自动起播 · 歌单耗尽整表循环 · 全局本地台本与歌曲台本版本管理",
   "icon": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M5.64 18.36a9 9 0 0 1 0-12.72\"/><path d=\"M18.36 5.64a9 9 0 0 1 0 12.72\"/><path d=\"M8.46 15.54a5 5 0 0 1 0-7.08\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.08\"/>",
   "enabled": true,
@@ -68,6 +68,7 @@
     "temperature": 0.9,
     "maxTokens": 20000,
     "ttsProviderOverride": "",
+    "ttsJpNameMap": "五条=ごじょう\n杰=すぐる\n傑=すぐる\n悟=さとる\n悟り=さとり\n悟る=さとる\n悟った=さとった\n夏油=げとう",
     "useOwnTts": false,
     "ownTtsKey": "",
     "ownTtsGid": "",
@@ -101,7 +102,7 @@
     "v3TaskModulePrompt": "请严格执行当前请求模式定义的任务；不要额外推荐用户没有要求的内容。",
     "v3RandomModulePrompt": "当前曲目将以随机顺序播放。每首歌曲的台本必须能够独立成立，不得引用上一首或下一首，不得使用“刚才那首”“接下来”“延续前面的话题”等依赖固定顺序的表达。不同歌曲之间不得形成必须按顺序理解的情节、对话或情绪递进。",
     "v3LyricsModulePrompt": "你可以根据准确的歌名和歌手自行尝试回忆或查找歌词来理解歌曲；如果无法可靠找到，就忽略歌词。禁止编造歌词、伪造歌词内容或假装已经找到。",
-    "v3CompanionPrompt": "你是专业的私人电台陪伴台本写作者。请为 {{主持人列表}} 写一份专业的电台陪伴类主持台本，让这些角色共同主持一段可以持续播放的长篇陪伴节目。\n这里是一个独立、假设性的私人电台世界。主持人 {{主持人列表}} 正在面向所有听众主持节目、分享话题；当【用户信息】存在时，他们知道其中的用户也是听众之一，但专业主持人不会直呼其名、持续单独对话或把节目变成一对一聊天，而会在面向全体听众的播报中，以不点名的关照、含蓄回应、只有对方可能听懂的暗线或留白自然地增加互动。\n\n【曲目不可知原则｜必须严格遵守】\n本台本与播放器中的实际曲目完全解耦。音乐由用户在外部独立、随机播放，模型既不知道当前曲目，也不负责选歌或排歌。主持人不得报幕、报歌名或歌手，不得说“刚才这首”“接下来这首”，不得猜测当前或下一首音乐的语言、国家、风格、歌词、主题、节奏、年代、情绪或演唱者，不得承诺播放任何歌曲，也不得把话题转折建立在某首歌已经或即将播放的假设上。可以把音乐仅视为不可描述的环境背景，但所有台词即使覆盖到任意随机曲目上也必须成立。\n\n【主持人】\n{{主持人列表}}\n\n【主持人角色设定】\n{{角色设定}}\n\n{{用户信息}}\n\n【角色与世界背景】\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n{{剧情上下文}}\n\n{{聊天总结}}\n\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n【本次任务】\n写一段真正面向电台听众的连续节目。主持人可以从一个具体而有趣的观察、故事、疑问或生活片段进入，逐渐展开联想、观点、讲述与共同主持人的交流；在合适处向所有听众提出无需立即回答的问题并留下停顿。节目应有清晰但不刻板的起承转合，内容连贯、耐听，有事实、有细节、有感受，避免机械报幕、空洞寒暄、廉价鸡汤、反复安慰和持续强调“陪伴”。角色可以保留原本的口癖、知识范围、幽默与价值观，但必须具备专业主持人的倾听感、节奏感和公共表达意识。\n当【用户信息】、【剧情上下文】、聊天总结或最近主动聊天存在时，只把它们作为暗线素材：不得复述隐私、不得暴露“我读过资料”、不得让其他听众察觉节目专为某个人定制。若这些区块为空，直接写普适节目，不猜测缺失信息。\n\n【篇幅要求】\n成稿约 {{目标字数}} 字。字数统计必须严格以所有 speech.ttsText 中实际会被主持人口播的正文合计为准，并使该口播正文达到约 {{目标字数}} 字。JSON 键名与结构、host、displayText 中与口播重复的内容、VoiceTag、pause 标记、秒数、转义符、空白及任何元数据均不计入此字数要求；不得用增加标签或结构字符来凑字数。\n\n【共同主持规则】\n如果有多名主持人，他们是共同主持这段节目：可以轮流说话、互相接话、讨论、打趣、补充或回应对方，也可以由一位主导、其他人自然加入。不要固定轮流顺序，不要求每段所有人都发言，但整篇应让适合参与的主持人真正参与交流。每个 speech.host 必须使用【主持人】中出现的名字。\n\n【停顿规则】\n{{停顿数量要求}}\n{{停顿秒数要求}}\n停顿是主持人说完一段内容后留给听众的独立安静时段，不是语气停顿。需要停顿时，必须在 nodes 数组中插入独立字符串标记 [pause=Ns]，例如停顿 24 秒就输出 \"[pause=24s]\"。标记不得放进 speech.ttsText 或 speech.displayText，也不得让主持人念出。播放停顿标记时，系统会停止请求语音并恢复背景声音，倒计时结束后再继续后面的 speech。\n\n【语言与节点规则】\n1. speech.ttsText 是发送给 TTS 的文本，只能使用 {{朗读语言}}。\n2. speech.displayText 是显示给用户看的文本，只能使用 {{显示语言}}；当显示语言与朗读语言相同时，两者内容可以相同。\n3. speech.host 必须与当前这段话的说话者一致。\n4. 每个 speech 应是一段适合单独请求语音的完整话语，不要把一句话无意义地拆成许多极短节点。\n5. 停顿只能使用独立的 \"[pause=Ns]\" 字符串标记；N 必须是允许区间内的秒数。\n\n【输出要求】\n{{输出格式要求}}\n不要输出 Markdown、代码块、标题、解释或 JSON 之外的任何文字。JSON 中所有字符串必须正确转义并完整闭合。",
+    "v3CompanionPrompt": "你是专业的私人电台陪伴台本写作者。请为 {{主持人列表}} 写一份专业的电台陪伴类主持台本，让这些角色共同主持一段可以持续播放的长篇陪伴节目。\n这里是一个独立、假设性的私人电台世界。主持人 {{主持人列表}} 正在面向所有听众主持节目、分享话题；当【用户信息】存在时，他们知道其中的用户也是听众之一，但专业主持人不会直呼其名、持续单独对话或把节目变成一对一聊天，而会在面向全体听众的播报中，以不点名的关照、含蓄回应、只有对方可能听懂的暗线或留白自然地增加互动。\n\n【曲目不可知原则｜必须严格遵守】\n本台本与播放器中的实际曲目完全解耦。音乐由用户在外部独立、随机播放，模型既不知道当前曲目，也不负责选歌或排歌。主持人不得报幕、报歌名或歌手，不得说“刚才这首”“接下来这首”，不得猜测当前或下一首音乐的语言、国家、风格、歌词、主题、节奏、年代、情绪或演唱者，不得承诺播放任何歌曲，也不得把话题转折建立在某首歌已经或即将播放的假设上。可以把音乐仅视为不可描述的环境背景，但所有台词即使覆盖到任意随机曲目上也必须成立。\n\n【主持人】\n{{主持人列表}}\n\n【主持人角色设定】\n{{角色设定}}\n\n{{用户信息}}\n\n【角色与世界背景】\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n{{剧情上下文}}\n\n{{聊天总结}}\n\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n【本次任务】\n写一段真正面向电台听众的连续节目。主持人可以从一个具体而有趣的观察、故事、疑问或生活片段进入，逐渐展开联想、观点、讲述与共同主持人的交流；在合适处向所有听众提出无需立即回答的问题并留下停顿。节目应有清晰但不刻板的起承转合，内容连贯、耐听，有事实、有细节、有感受，避免机械报幕、空洞寒暄、廉价鸡汤、反复安慰和持续强调“陪伴”。角色可以保留原本的口癖、知识范围、幽默与价值观，但必须具备专业主持人的倾听感、节奏感和公共表达意识。\n当【用户信息】、【剧情上下文】、聊天总结或最近主动聊天存在时，只把它们作为暗线素材：不得复述隐私、不得暴露“我读过资料”、不得让其他听众察觉节目专为某个人定制。若这些区块为空，直接写普适节目，不猜测缺失信息。\n\n【篇幅要求】\n成稿约 {{目标字数}} 字。字数统计必须严格以所有 speech.ttsText 中实际会被主持人口播的正文合计为准，并使该口播正文达到约 {{目标字数}} 字。JSON 键名与结构、host、displayText 中与口播重复的内容、VoiceTag、pause 标记、秒数、转义符、空白及任何元数据均不计入此字数要求；不得用增加标签或结构字符来凑字数。\n\n【共同主持规则】\n如果有多名主持人，他们是共同主持这段节目：可以轮流说话、互相接话、讨论、打趣、补充或回应对方，也可以由一位主导、其他人自然加入。不要固定轮流顺序，不要求每段所有人都发言，但整篇应让适合参与的主持人真正参与交流。每个 speech.host 必须使用【主持人】中出现的名字。\n\n【停顿规则】\n{{停顿数量要求}}\n{{停顿秒数要求}}\n停顿是主持人说完一段内容后留给听众的独立安静时段，不是语气停顿。需要停顿时，必须在 nodes 数组中插入独立字符串标记 [pause=Ns]，例如停顿 24 秒就输出 \"[pause=24s]\"。标记不得放进 speech.ttsText 或 speech.displayText，也不得让主持人念出。播放停顿标记时，系统会停止请求语音并恢复背景声音，倒计时结束后再继续后面的 speech。\n\n【语言与节点规则】\n1. speech.ttsText 是发送给 TTS 的文本，只能使用 {{朗读语言}}。\n2. speech.displayText 是显示给用户看的文本，只能使用 {{显示语言}}；当显示语言与朗读语言相同时，两者内容可以相同。\n3. speech.host 必须与当前这段话的说话者一致。\n4. 每个 speech 应是一段适合单独请求语音的完整话语，不要把一句话无意义地拆成许多极短节点。\n5. 停顿只能使用独立的 \"[pause=Ns]\" 字符串标记；N 必须是允许区间内的秒数。\n6. 主持人之间互相称呼时，必须严格使用符合其人物关系与角色设定的称呼，禁止用全名、姓氏或错误的称呼互称；关系亲近的挚友用名字简称（示例：五条悟对夏油杰称“杰”，夏油杰对五条悟称“悟”）；称呼与说话者身份及台词语言一致。\n6. 主持人之间互相称呼时，必须严格使用符合其人物关系与角色设定的称呼，禁止用全名、姓氏或错误的称呼互称；关系亲近的挚友用名字简称（示例：五条悟对夏油杰称“杰”，夏油杰对五条悟称“悟”）；称呼与说话者身份及台词语言一致。\n\n【输出要求】\n{{输出格式要求}}\n不要输出 Markdown、代码块、标题、解释或 JSON 之外的任何文字。JSON 中所有字符串必须正确转义并完整闭合。",
     "v3RecommendOnlyPrompt": "只推荐真实存在的歌曲，不写台本、不写主持人对白。只返回歌曲 title 与 artist，不要编造 URL。",
     "v3CompanionPromptSuiteV1": true,
     "v3CompanionAutoRequestDefaultV2": true
@@ -1863,7 +1864,7 @@
 
         var dispWant = _radioLangCode(_displayLang());
 
-        var need = [], i, n, ch, want, gotTts, gotDisp, badTts, badDisp, tTxt, dTxt;
+        var need = [], i, n, ch, want, gotTts, gotDisp, badTts, badDisp, badName, tTxt, dTxt, whyParts, pi, nmPairs;
 
         for (i = 0; i < nodes.length; i++) {
 
@@ -1890,7 +1891,32 @@
 
             badDisp = !!(gotDisp && dispWant && gotDisp !== dispWant);
 
-            if (badTts || badDisp) need.push({ idx: i, host: n.host, want: want, dispWant: dispWant, oldTts: n.ttsText, oldDisp: n.displayText, why: (badTts ? '朗读' : '') + (badTts && badDisp ? '+' : '') + (badDisp ? '显示' : '') });
+            /* 人名读音检查（朗读语言为日文时）：朗读文本含映射表中的汉字人名（独立成词，非"杰出"类词组）→ 需修正为假名/罗马音。
+             * 语言已不符（badTts）的节点不在此检查——先修语言，AI 重写时按规则 7 直接写假名。
+             * 词保护行（如"悟り"）匹配不算人名，避免 AI 白跑改写正常日文词。 */
+            badName = false;
+
+            if (!badTts && want === 'ja') {
+
+                nmPairs = _jpNameMapPairs();
+
+                if (nmPairs.length && _jpNameScanNeed(tTxt, nmPairs)) badName = true;
+
+            }
+
+            if (badTts || badDisp || badName) {
+
+                whyParts = [];
+
+                if (badTts) whyParts.push('朗读');
+
+                if (badDisp) whyParts.push('显示');
+
+                if (badName) whyParts.push('人名读音');
+
+                need.push({ idx: i, host: n.host, want: want, dispWant: dispWant, oldTts: n.ttsText, oldDisp: n.displayText, why: whyParts.join('+') });
+
+            }
 
         }
 
@@ -1913,7 +1939,7 @@
 
     function _buildLangFixMessages(need, hosts) {
 
-        var sysMsg = '你是台词语言修正器。用户会给出若干条台词，每条标注了主持人、期望的朗读语言、期望的显示语言。请把每条台词重写/翻译成指定语言，保持原意、语气、口吻完全不变。\n强制规则（最高优先级）：\n1. “朗读文本”必须整句使用该条指定的朗读语言书写（朗读语言为“日文”就用日语，为“中文”就用中文）。\n2. “显示文本”必须整句使用该条指定的显示语言书写，是朗读文本的翻译。\n3. 朗读文本与显示文本必须是同一句话，含义一一对应。\n4. 不得添加解释、注释、原文对照或任何多余内容。\n5. 原样保留台词中的停顿标记（如【pause=12s】或[pause=12s]），不得删除、改动或新增。\n6. 不要输出 JSON、不要代码块、不要编号、不要标题，也不要任何多余文字。\n7. 角色名与专有名词：禁止按中文拼音直译。翻译为日文时，角色名必须使用标准日文名读音（示例：五条悟的“悟”→Satoru/さとる，“五条”→Gojo/ごじょう；夏油杰的“杰”→Suguru/すぐる 或 Geto/げとう，“夏油”→Geto/げとう）。主持人名字在台词中以姓、名或昵称出现时，同样按标准日文读音处理，不得用拼音。\n输出格式：按下方台词顺序，每条输出一行；每行格式为“新朗读文本 | 新显示文本”（用半角竖线 | 分隔，| 前后不要有额外内容）。';
+        var sysMsg = '你是台词语言修正器。用户会给出若干条台词，每条标注了主持人、期望的朗读语言、期望的显示语言。请把每条台词重写/翻译成指定语言，保持原意、语气、口吻完全不变。\n强制规则（最高优先级）：\n1. “朗读文本”必须整句使用该条指定的朗读语言书写（朗读语言为“日文”就用日语，为“中文”就用中文）。\n2. “显示文本”必须整句使用该条指定的显示语言书写，是朗读文本的翻译。\n3. 朗读文本与显示文本必须是同一句话，含义一一对应。\n4. 不得添加解释、注释、原文对照或任何多余内容。\n5. 原样保留台词中的停顿标记（如【pause=12s】或[pause=12s]），不得删除、改动或新增。\n6. 不要输出 JSON、不要代码块、不要编号、不要标题，也不要任何多余文字。\n7. 角色名与专有名词：禁止按中文拼音直译。翻译为日文时，角色名必须使用标准日文名读音（示例：五条悟的“悟”→Satoru/さとる，“五条”→Gojo/ごじょう；夏油杰的“杰”→Suguru/すぐる 或 Geto/げとう，“夏油”→Geto/げとう）。主持人名字在台词中以姓、名或昵称出现时，同样按标准日文读音处理，不得用拼音；朗读文本为日文时，角色名必须直接写假名（如すぐる、さとる、ごじょう、げとう），禁止写汉字（如傑、悟、五条、夏油）。\n8. 台词中主持人之间的互相称呼必须符合人物关系：五条悟对夏油杰称“杰”（日文：傑／すぐる），夏油杰对五条悟称“悟”（日文：悟／さとる）；禁止用错误的称呼、姓氏或全名互称，称呼语言与整句一致。\n输出格式：按下方台词顺序，每条输出一行；每行格式为“新朗读文本 | 新显示文本”（用半角竖线 | 分隔，| 前后不要有额外内容）。';
 
         var userMsg = '需要修正的台词：\n' + need.map(function(f) {
 
@@ -2347,6 +2373,209 @@
         for (var i = 0; i < arr.length; i++) u[i] = parseInt(arr[i], 16);
 
         return u;
+
+    }
+
+
+
+    function _jpNameMapPairs() {
+
+        /* 解析「日文朗读人名读音替换」映射表为 [{k,v}]，先长后短排序（长 key 优先，避免"五"先命中"五条"） */
+        var mapSrc = (cfg.ttsJpNameMap && String(cfg.ttsJpNameMap).trim()) || '';
+
+        var pairs = [];
+
+        if (!mapSrc) return pairs;
+
+        String(mapSrc).split(/[\r\n]+/).forEach(function(line) {
+
+            line = String(line || '').trim();
+
+            if (!line) return;
+
+            var eq = line.indexOf('=');
+
+            if (eq <= 0) return;
+
+            var k = line.slice(0, eq).trim(), v = line.slice(eq + 1).trim();
+
+            if (k && v && v !== k) pairs.push({ k: k, v: v });
+
+        });
+
+        pairs.sort(function(a, b) { return b.k.length - a.k.length; });
+
+        return pairs;
+
+    }
+
+
+
+    function _jpNameIsHan(c) {
+
+        /* CJK 统一表意文字（汉字）判断：U+4E00–U+9FFF；人名独立成词判定的边界用 */
+        return !isNaN(c) && c >= 0x4E00 && c <= 0x9FFF;
+
+    }
+
+
+
+    function _jpNameIsKeyStart(txt, idx, pairs) {
+
+        /* 位置 idx 的字符是否「某映射 key 的开头」（如"五条悟"中"悟"是 key 开头）→ 连续人名的一部分 */
+        if (!_jpNameIsHan(txt.charCodeAt(idx))) return false;
+
+        for (var p = 0; p < pairs.length; p++) {
+
+            if (txt.slice(idx, idx + pairs[p].k.length) === pairs[p].k) return true;
+
+        }
+
+        return false;
+
+    }
+
+
+
+    function _jpNameIsDetectKey(k, oneKeys) {
+
+        /* 检测用：判断 key 是否「人名 key」（需标记修复）。单字 key（杰/悟/傑）是人名；
+         * 长 key 若含单字 key 子串（悟り/悟る/悟った）视为「词保护行」——只保证运行时读音正确，
+         * 不是人名场景，检测不标记（避免 AI 白跑改写正常日文词）。长 key 不含单字 key（五条/夏油）→ 人名。 */
+        if (k.length === 1) return true;
+
+        for (var o = 0; o < oneKeys.length; o++) {
+
+            if (k.indexOf(oneKeys[o]) >= 0) return false;
+
+        }
+
+        return true;
+
+    }
+
+
+
+    function _jpNameScanNeed(txt, pairs) {
+
+        /* 检测人名是否需要修复：与 _jpNameReplaceText 相同边界扫描，但只统计「人名 key」的替换发生；
+         * 词保护行（含单字 key 的长 key，如"悟り"）的匹配不算人名。 */
+        if (!txt) return false;
+
+        var oneKeys = [];
+
+        pairs.forEach(function(p) { if (p.k.length === 1) oneKeys.push(p.k); });
+
+        var i = 0, pi, k, matched, lastEnd = -1, prevOk, nextOk;
+
+        while (i < txt.length) {
+
+            matched = false;
+
+            for (pi = 0; pi < pairs.length; pi++) {
+
+                k = pairs[pi].k;
+
+                if (txt.slice(i, i + k.length) === k) {
+
+                    prevOk = (i === lastEnd) || !_jpNameIsHan(txt.charCodeAt(i - 1)) || _jpNameIsKeyStart(txt, i - 1, pairs);
+
+                    nextOk = !_jpNameIsHan(txt.charCodeAt(i + k.length)) || _jpNameIsKeyStart(txt, i + k.length, pairs);
+
+                    if (prevOk && nextOk) {
+
+                        if (_jpNameIsDetectKey(k, oneKeys)) return true;
+
+                        i += k.length;
+
+                        lastEnd = i;
+
+                        matched = true;
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+            if (!matched) i++;
+
+        }
+
+        return false;
+
+    }
+
+
+
+    function _jpNameReplaceText(txt, pairs) {
+
+        /* 人名读音替换：仅当 key「独立成词」时替换。
+         * 前边界 OK = 紧接上次替换（连续人名，如"夏油杰"中"杰"前是"夏油"结尾）/ 前非汉字 / 前是某 key 开头；
+         * 后边界 OK = 后非汉字 / 后是某 key 开头（如"五条悟"中"悟"）。
+         * 前后是含同字的词组汉字（"杰出"的"出"）→ 不替换，避免误伤。
+         * pairs 已先长后短排序，每个位置优先匹配最长 key。 */
+        if (!txt) return txt;
+
+        var out = '', i = 0, pi, k, matched, lastEnd = -1, prevOk, nextOk;
+
+        while (i < txt.length) {
+
+            matched = false;
+
+            for (pi = 0; pi < pairs.length; pi++) {
+
+                k = pairs[pi].k;
+
+                if (txt.slice(i, i + k.length) === k) {
+
+                    prevOk = (i === lastEnd) || !_jpNameIsHan(txt.charCodeAt(i - 1)) || _jpNameIsKeyStart(txt, i - 1, pairs);
+
+                    nextOk = !_jpNameIsHan(txt.charCodeAt(i + k.length)) || _jpNameIsKeyStart(txt, i + k.length, pairs);
+
+                    if (prevOk && nextOk) {
+
+                        out += pairs[pi].v;
+
+                        i += k.length;
+
+                        lastEnd = i;
+
+                        matched = true;
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+            if (!matched) { out += txt.charAt(i); i++; }
+
+        }
+
+        return out;
+
+    }
+
+
+
+    function _jpNameSpeechText(text, ch) {
+
+        text = String(text || '');
+
+        var lg = _radioLangCode((ch && ch.ttsSpeakLang) || (ch && ch.ttsLanguage) || '');
+
+        if (lg !== 'ja' || !text) return text;
+
+        var pairs = _jpNameMapPairs();
+
+        if (!pairs.length) return text;
+
+        return _jpNameReplaceText(text, pairs);
 
     }
 
@@ -4825,7 +5054,7 @@
 
         eng.duck(true);
 
-        _tts(parsed.tts, ch, function(url) {
+        _tts(_jpNameSpeechText(parsed.tts, ch), ch, function(url) {
 
             try {
 
@@ -6886,7 +7115,7 @@
 
         SNAP_GAP = 24;
 
-    var FIELDS = [{"group":"电台","key":"batchSize","type":"number","label":"每次 API 请求准备曲数","default":10,"min":1,"max":12},{"group":"电台","key":"leadSeconds","type":"number","label":"歌曲剩余多少秒时准备/切到下一首","default":0,"min":0,"max":60},{"group":"电台","key":"backgroundPlayback","type":"toggle","label":"关闭功能系统后继续后台播放","default":true},{"group":"电台","key":"autoRequest","type":"toggle","label":"队列为空时自动请求下一批","default":true},{"group":"电台","key":"loopPlaylist","type":"toggle","label":"没有新曲时循环最近播放","default":false},{"group":"电台","key":"recentDedupeCount","type":"number","label":"请求时避免最近 N 首同名重复","default":30,"min":0,"max":200,"step":1},{"group":"电台","key":"playHistoryLimit","type":"number","label":"播放历史保存数量","default":30,"min":1,"max":200,"step":1},{"group":"电台","key":"scriptHistoryMax","type":"number","label":"收藏曲目台词历史版本上限","default":3,"min":1,"max":20,"step":1},{"group":"电台","key":"updateScripts","type":"toggle","label":"播放前自动更新台本（建议关闭，使用底部批量更新）","default":false},{"group":"电台","key":"musicVolume","type":"number","label":"音乐正常音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"voiceVolume","type":"number","label":"主持人语音音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"autoFixLang","type":"toggle","label":"朗读前自动检测修复台词语言","default":true},{"group":"电台","key":"fixModel","type":"text","label":"语言修复专用模型（留空=跟随全局）","default":"Pro/deepseek-ai/DeepSeek-V3.2","placeholder":"Pro/deepseek-ai/DeepSeek-V3.2"},{"group":"电台","key":"captionOnFloat","type":"toggle","label":"字幕显示在电台悬浮球/播放条旁","default":true},{"group":"电台","key":"captionTopRight","type":"toggle","label":"字幕显示在屏幕右上角","default":false},{"group":"电台","key":"popupFontSize","type":"number","label":"字幕弹窗字体大小","default":13,"min":10,"max":22,"step":1},{"group":"电台","key":"voiceLanguage","type":"select","label":"VoiceTag 朗读语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"displayLanguage","type":"select","label":"字幕显示语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"chatBilingual","type":"toggle","label":"主播对话双语显示","default":false},{"group":"电台","key":"chatRecentMessages","type":"number","label":"主播对话完整记忆条数","default":10,"min":0,"max":100,"step":1},{"group":"电台","key":"chatSummaryBatch","type":"number","label":"主播对话每多少条旧消息总结一次","default":40,"min":5,"max":200,"step":1},{"group":"电台","key":"recommendChatMessages","type":"number","label":"推荐歌曲时带入最近对话条数","default":6,"min":0,"max":60,"step":1},{"group":"上下文","key":"contextSource","type":"multiselect","label":"剧情上下文来源（可多选）","default":["st","horae"],"options":[{"v":"st","l":"酒馆历史（同步 Visual Novel 标签过滤）"},{"v":"horae","l":"Horae 总结"},{"v":"baibai","l":"柏宝书总结（正常记忆注入口径）"}]},{"group":"上下文","key":"stHistN","type":"number","label":"酒馆聊天历史条数（0=不注入）","default":1,"min":0,"max":80},{"group":"上下文","key":"radioWbIds","type":"textarea","label":"电台绑定世界书 <button type=\"button\" onclick=\"typeof window._vnmRadioToggleWbSettings==='function'&&window._vnmRadioToggleWbSettings(this)\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.14);color:rgba(255,255,255,.68);font-size:11px;cursor:pointer;font-family:inherit;line-height:1.7;\">选择世界书</button>","rows":2,"default":"","placeholder":"点击上方按钮勾选世界书；也可手动输入世界书ID或名称，每行一个"},{"group":"提示词","key":"promptTemplate","type":"textarea-presets","label":"电台编排提示词","rows":13,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{酒馆历史}}","{{Horae总结}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放曲目}}","{{近期已播放曲目禁止重复}}","{{最近主播对话}}","{{用户输入}}","{{请求曲数}}","{{朗读语言}}","{{显示语言}}"],"default":"你是专业的电台台本写作者，接下来你要为用户选择的角色进行台本的创作。台本的内容不是正式广播节目，而是角色本人陪 {{用户名称}} 一起听歌、聊天、换歌前后自然聊天。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就把他们视为正在同一个私人电台空间里陪用户听歌。他们可以轮流说话、互相接话，也可以回应用户；不要受主线剧情中是否在场的限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【近期已播放曲目禁止重复】\n{{近期已播放曲目禁止重复}}\n\n【最近主播对话】\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n请选择 {{请求曲数}} 首真实存在的歌曲，并为每首歌曲写一段角色对用户说的台本。\n\n选歌要求：\n1. 歌曲必须真实存在，歌名和艺术家必须准确。\n2. 除非用户明确要求，否则不要推荐 Live、Remix、Cover、伴奏或同名翻唱版本。\n3. 结合用户要求、音乐偏好、最近对话、剧情氛围和角色性格选歌。\n4. 不要编造音频地址、歌曲 ID、平台来源或搜索链接。播放器会根据歌名和艺术家自行搜索音源。\n\n台本要求：\n1. 台本重点是角色本人和 {{用户名称}} 的相处感，像角色陪用户一起听歌时自然说的话。\n2. 不要写成主持人报幕、正式广播、歌曲百科、音乐史或专业乐评。\n3. 可以回应最近对话、用户心情和剧情氛围，也可以让多个主持人自然接话。\n4. host 必须使用【主持人】中出现的角色名字。\n5. VoiceTag 内的发送文本必须只使用 {{朗读语言}}；中文弯引号中的显示文本必须只使用 {{显示语言}}。\n\n最终只返回一个合法 JSON 对象。不要 Markdown，不要代码块，不要解释，不要标题，也不要输出 JSON 之外的文字。\n\n返回格式必须严格如下：\n{\"items\":[{\"host\":\"主持人名字\",\"say\":\"[VoiceTag:主持人名字:{{朗读语言}}:发送文本]“显示文本”\",\"song\":{\"title\":\"真实歌名\",\"artist\":\"真实艺术家\"},\"reason\":\"简短的内部选歌备注\"}]}\n\n字段规则：\n- items 数量必须等于 {{请求曲数}}。\n- song 对象只能包含 title 和 artist 两个字段。\n- 不要输出 url、query、id、source、platform 或其他歌曲字段。\n- JSON 中所有字符串必须正确转义并完整闭合。"},{"group":"音乐源","key":"musicLibrary","type":"textarea-presets","label":"本地曲库（每行 JSON 或 歌名 | 歌手 | url | 标签）","rows":8,"variables":["{\"title\":\"歌名\",\"artist\":\"歌手\",\"url\":\"https://...mp3\",\"tags\":\"标签\"}"],"default":"{\"title\":\"示例歌曲\",\"artist\":\"可替换歌手\",\"url\":\"https://example.com/song.mp3\",\"tags\":\"安静,夜晚\",\"note\":\"把这一行换成真实可播放 mp3/flac/ogg 直链\"}\n歌名 | 歌手 | https://example.com/song.mp3 | 标签或备注"},{"group":"音乐偏好","key":"tasteDistillPrompt","type":"textarea-presets","label":"音乐偏好蒸馏提示词","rows":10,"variables":["{{用户输入}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放}}"],"default":"请根据用户输入、收藏曲目和最近播放记录，蒸馏出一个可以长期用于私人电台推荐的音乐偏好提示词。\n\n要求：\n1. 输出中文，80-220字。\n2. 不要写成列表，不要解释你的过程。\n3. 保留用户明确喜欢/不喜欢的曲风、语言、年代、情绪、节奏、歌手/作品倾向。\n4. 如果信息不足，就谨慎概括，不要编造。\n\n【用户输入】\n{{用户输入}}\n\n【已有偏好】\n{{音乐偏好}}\n\n【收藏曲目】\n{{收藏曲目}}\n\n【最近播放】\n{{最近播放}}"},{"group":"提示词","key":"scriptRewritePrompt","type":"textarea-presets","label":"收藏/手动曲目更新台本提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近主播对话}}","{{曲目列表}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在为已经确定要播放的曲目补写角色台词。不要推荐新歌，不要改变曲目，只给每首给定曲目写一段角色说给用户听的话。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在这个“陪你听歌”的小空间里。可以互相对话、一起跟用户聊天。不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【需要补台词的曲目】\n{{曲目列表}}\n\n写作方向：\n- 像角色陪 user 一起听这首歌，不要写成正式节目串场。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n- 可以回应最近聊天、剧情气氛、用户偏好，但语气要自然。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"scripts\":[{\"key\":\"{{曲目key}}\",\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n填写要求：\n- 每个 scripts 对象必须对应【需要补台词的曲目】里的一首歌，key 必须原样使用给定的曲目 key。\n- host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatPrompt","type":"textarea-presets","label":"主播连线聊天提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近播放曲目}}","{{聊天总结}}","{{最近主播对话}}","{{用户输入}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在扮演被用户选中的角色，和 {{用户名称}} 一边听歌一边聊天。这里只回复聊天内容，不推荐新曲目，不输出歌曲。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在聊天现场。可以一人回答，也可以多人接话互动；不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近播放曲目】\n{{最近播放曲目}}\n\n【已总结的聊天】\n{{聊天总结}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【用户刚说】\n{{用户输入}}\n\n写作方向：\n- 像角色本人直接回应 user，不要写成主持人连线、节目采访或正式播音。\n- 可以顺着正在听歌的氛围说，但重点是和 user 说话。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"replies\":[{\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n主持人存在多人的情况请让角色按场景自然参加。不要只一个人讲话。根据用户这句话和最近聊天，自然判断哪些主持人该说话：可以一个人说，也可以多人接话，也可以有人不发言；不要固定顺序，不要重复上一轮发言模式。用户 @ 到的主持人必须发言。\n\n填写要求：\n- replies 数量按场景自然决定，通常 1-3 条；每条 host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatSummaryPrompt","type":"textarea-presets","label":"主播对话记忆总结提示词","rows":5,"variables":["{{旧总结}}","{{对话内容}}"],"default":"请把私人电台主播与用户的旧对话整理成连续记忆摘要，保留用户偏好、情绪、承诺、重要剧情联系、刚才聊到的歌和主播表达过的态度。不要列表，不要解释，120-260字。\n\n【旧总结】\n{{旧总结}}\n\n【新增对话】\n{{对话内容}}"},{"group":"音乐源","key":"gdMusicApiBase","type":"text","label":"GD音乐台接口地址","default":"https://music-api.gdstudio.xyz/api.php","placeholder":"https://music-api.gdstudio.xyz/api.php"},{"group":"覆盖 API","key":"useOwnApi","type":"toggle","label":"启用自定义电台 API","default":false},{"group":"覆盖 API","key":"ownApiUrl","type":"text","label":"API 地址","default":"","placeholder":"https://api.example.com/v1"},{"group":"覆盖 API","key":"ownApiKey","type":"password","label":"API 密钥","default":""},{"group":"覆盖 API","key":"useOwnModel","type":"toggle","label":"使用自定义模型名","default":false},{"group":"覆盖 API","key":"ownModel","type":"text","label":"模型名","default":""},{"group":"生成参数","key":"temperature","type":"number","label":"Temperature","default":0.9,"min":0,"max":2},{"group":"生成参数","key":"maxTokens","type":"number","label":"最大输出 tokens <button type=\"button\" onclick=\"window._vnmRadioShowLastApi&&window._vnmRadioShowLastApi()\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.09);border:.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:11px;cursor:pointer;font-family:inherit;\">查看上次 API 返回</button>","default":20000,"min":256,"max":50000},{"group":"生成参数","key":"aiTimeoutMs","type":"number","label":"请求超时（秒）","default":300,"min":15,"max":600},{"group":"覆盖 TTS","key":"ttsProviderOverride","type":"select","label":"语音来源(本电台，留空则跟随全局)","options":[{"value":"","label":"跟随全局"},{"value":"minimax","label":"MiniMax"},{"value":"fishaudio","label":"Fish Audio"}],"default":""},{"group":"覆盖 TTS","key":"useOwnTts","type":"toggle","label":"使用自定义凭证(而非全局Key)","default":false},{"group":"覆盖 TTS","key":"ownTtsKey","type":"password","label":"MiniMax API Key","default":""},{"group":"覆盖 TTS","key":"ownTtsGid","type":"text","label":"MiniMax Group ID","default":""},{"group":"覆盖 TTS","key":"ownFishKey","type":"password","label":"Fish Audio API Key","default":""},{"group":"电台","key":"barAlbumGlass","type":"toggle","label":"第二形态专辑图液态玻璃遮罩","default":true},{"group":"歌词","key":"barLyrics","type":"toggle","label":"第二形态流动歌词显示","default":true},{"group":"歌词","key":"orbLyrics","type":"toggle","label":"第一形态侧边歌词显示","default":true},{"group":"歌词","key":"lyricsStyle","type":"select","label":"歌词动画样式","default":"fume","options":[{"v":"fume","l":"浮名（模糊聚焦）"},{"v":"lumi","l":"流光（逐行点亮）"},{"v":"stack","l":"云阶（层叠上升）"},{"v":"scroll","l":"简约滚动"}]},{"group":"电台","key":"keepModeOnVnExit","type":"toggle","label":"退出VN模式时保持当前形态（关=收回第一形态）","default":false},{"group":"电台","key":"autoRetry","type":"toggle","label":"请求失败自动重试","default":true},{"group":"电台","key":"retryCount","type":"number","label":"自动重试次数","default":2,"min":0,"max":10},{"group":"电台","key":"radioTtsEnabled","type":"toggle","label":"启用 TTS 语音（关闭后仅显示台本/字幕不请求语音）","default":true},{"group":"音乐偏好","key":"tasteEnabled","type":"toggle","label":"启用蒸馏结果（{{音乐偏好}}）","default":true},{"group":"电台","key":"leftCardImage","type":"text","label":"第三形态左侧播放栏背景图 URL（留空=当前专辑封面）","default":"","placeholder":"https://..."},{"group":"提示词","key":"artistChatPrompt","type":"textarea-presets","label":"Artist 私聊提示词（同电话 App）","default":"【回复格式（最高优先级，违反即不合格）】\n你的每条回复必须且只能使用下面这一种格式（需要多说几条就分成多行，每行一条）：\n[VoiceTag:{{角色名称}}:{{朗读语言}}:语音文本]“字幕文本”\n- 方括号内的“语音文本”必须整句使用 {{朗读语言}} 书写，这是发送给 TTS 朗读的内容。\n- 中文弯引号“ ”内的“字幕文本”必须整句使用 {{显示语言}} 书写，这是显示给用户看的字幕。\n- 语音文本与字幕文本是同一句话的两种语言版本，内容含义必须一一对应。\n- VoiceTag 格式不是 Markdown、不是 JSON、不是代码块；禁止输出 JSON 对象、```代码块、**加粗**、列表或任何解释。\n\n你正在扮演{{角色名称}}与{{用户名称}}进行对话。\n【角色设定】\n{{角色名称}}\n{{角色设定}}\n【用户设定】\n{{用户名称}}\n{{用户设定}}\n【世界背景信息】\n{{世界书}}\n【当前{{用户名称}}经历】\n{{酒馆历史}}\n【最近对话】\n{{对话内容}}\n请用简短自然的口语风格回复，20字以内，只说话不描述动作，不要输出任何额外内容。","rows":12,"variables":["{{角色名称}}","{{角色设定}}","{{用户名称}}","{{用户设定}}","{{世界书}}","{{酒馆历史}}","{{Horae总结}}","{{对话内容}}","{{用户输入}}","{{当前时间}}","{{朗读语言}}","{{显示语言}}"]},{"group":"电台","key":"artistDepth","type":"number","label":"Artist 私聊携带最大轮数","default":10,"min":0,"max":50},{"group":"电台","key":"artistInjectN","type":"number","label":"Artist 注入酒馆的最近条数","default":8,"min":1,"max":50}];
+    var FIELDS = [{"group":"电台","key":"batchSize","type":"number","label":"每次 API 请求准备曲数","default":10,"min":1,"max":12},{"group":"电台","key":"leadSeconds","type":"number","label":"歌曲剩余多少秒时准备/切到下一首","default":0,"min":0,"max":60},{"group":"电台","key":"backgroundPlayback","type":"toggle","label":"关闭功能系统后继续后台播放","default":true},{"group":"电台","key":"autoRequest","type":"toggle","label":"队列为空时自动请求下一批","default":true},{"group":"电台","key":"loopPlaylist","type":"toggle","label":"没有新曲时循环最近播放","default":false},{"group":"电台","key":"recentDedupeCount","type":"number","label":"请求时避免最近 N 首同名重复","default":30,"min":0,"max":200,"step":1},{"group":"电台","key":"playHistoryLimit","type":"number","label":"播放历史保存数量","default":30,"min":1,"max":200,"step":1},{"group":"电台","key":"scriptHistoryMax","type":"number","label":"收藏曲目台词历史版本上限","default":3,"min":1,"max":20,"step":1},{"group":"电台","key":"updateScripts","type":"toggle","label":"播放前自动更新台本（建议关闭，使用底部批量更新）","default":false},{"group":"电台","key":"musicVolume","type":"number","label":"音乐正常音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"voiceVolume","type":"number","label":"主持人语音音量（0-100）","default":100,"min":0,"max":100},{"group":"电台","key":"autoFixLang","type":"toggle","label":"朗读前自动检测修复台词语言","default":true},{"group":"电台","key":"fixModel","type":"text","label":"语言修复专用模型（留空=跟随全局）","default":"Pro/deepseek-ai/DeepSeek-V3.2","placeholder":"Pro/deepseek-ai/DeepSeek-V3.2"},{"group":"电台","key":"captionOnFloat","type":"toggle","label":"字幕显示在电台悬浮球/播放条旁","default":true},{"group":"电台","key":"captionTopRight","type":"toggle","label":"字幕显示在屏幕右上角","default":false},{"group":"电台","key":"popupFontSize","type":"number","label":"字幕弹窗字体大小","default":13,"min":10,"max":22,"step":1},{"group":"电台","key":"voiceLanguage","type":"select","label":"VoiceTag 朗读语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"displayLanguage","type":"select","label":"字幕显示语言","default":"中文","options":[{"v":"中文","l":"中文"},{"v":"英语","l":"英语"},{"v":"日语","l":"日语"},{"v":"韩语","l":"韩语"},{"v":"法语","l":"法语"},{"v":"德语","l":"德语"},{"v":"西班牙语","l":"西班牙语"}]},{"group":"电台","key":"chatBilingual","type":"toggle","label":"主播对话双语显示","default":false},{"group":"电台","key":"chatRecentMessages","type":"number","label":"主播对话完整记忆条数","default":10,"min":0,"max":100,"step":1},{"group":"电台","key":"chatSummaryBatch","type":"number","label":"主播对话每多少条旧消息总结一次","default":40,"min":5,"max":200,"step":1},{"group":"电台","key":"recommendChatMessages","type":"number","label":"推荐歌曲时带入最近对话条数","default":6,"min":0,"max":60,"step":1},{"group":"上下文","key":"contextSource","type":"multiselect","label":"剧情上下文来源（可多选）","default":["st","horae"],"options":[{"v":"st","l":"酒馆历史（同步 Visual Novel 标签过滤）"},{"v":"horae","l":"Horae 总结"},{"v":"baibai","l":"柏宝书总结（正常记忆注入口径）"}]},{"group":"上下文","key":"stHistN","type":"number","label":"酒馆聊天历史条数（0=不注入）","default":1,"min":0,"max":80},{"group":"上下文","key":"radioWbIds","type":"textarea","label":"电台绑定世界书 <button type=\"button\" onclick=\"typeof window._vnmRadioToggleWbSettings==='function'&&window._vnmRadioToggleWbSettings(this)\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.14);color:rgba(255,255,255,.68);font-size:11px;cursor:pointer;font-family:inherit;line-height:1.7;\">选择世界书</button>","rows":2,"default":"","placeholder":"点击上方按钮勾选世界书；也可手动输入世界书ID或名称，每行一个"},{"group":"提示词","key":"promptTemplate","type":"textarea-presets","label":"电台编排提示词","rows":13,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{酒馆历史}}","{{Horae总结}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放曲目}}","{{近期已播放曲目禁止重复}}","{{最近主播对话}}","{{用户输入}}","{{请求曲数}}","{{朗读语言}}","{{显示语言}}"],"default":"你是专业的电台台本写作者，接下来你要为用户选择的角色进行台本的创作。台本的内容不是正式广播节目，而是角色本人陪 {{用户名称}} 一起听歌、聊天、换歌前后自然聊天。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就把他们视为正在同一个私人电台空间里陪用户听歌。他们可以轮流说话、互相接话，也可以回应用户；不要受主线剧情中是否在场的限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【电台专用世界书】\n{{电台世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【近期已播放曲目禁止重复】\n{{近期已播放曲目禁止重复}}\n\n【最近主播对话】\n{{最近主播对话}}\n\n【用户本次要求】\n{{用户输入}}\n\n请选择 {{请求曲数}} 首真实存在的歌曲，并为每首歌曲写一段角色对用户说的台本。\n\n选歌要求：\n1. 歌曲必须真实存在，歌名和艺术家必须准确。\n2. 除非用户明确要求，否则不要推荐 Live、Remix、Cover、伴奏或同名翻唱版本。\n3. 结合用户要求、音乐偏好、最近对话、剧情氛围和角色性格选歌。\n4. 不要编造音频地址、歌曲 ID、平台来源或搜索链接。播放器会根据歌名和艺术家自行搜索音源。\n\n台本要求：\n1. 台本重点是角色本人和 {{用户名称}} 的相处感，像角色陪用户一起听歌时自然说的话。\n2. 不要写成主持人报幕、正式广播、歌曲百科、音乐史或专业乐评。\n3. 可以回应最近对话、用户心情和剧情氛围，也可以让多个主持人自然接话。\n4. host 必须使用【主持人】中出现的角色名字。\n5. VoiceTag 内的发送文本必须只使用 {{朗读语言}}；中文弯引号中的显示文本必须只使用 {{显示语言}}。\n\n最终只返回一个合法 JSON 对象。不要 Markdown，不要代码块，不要解释，不要标题，也不要输出 JSON 之外的文字。\n\n返回格式必须严格如下：\n{\"items\":[{\"host\":\"主持人名字\",\"say\":\"[VoiceTag:主持人名字:{{朗读语言}}:发送文本]“显示文本”\",\"song\":{\"title\":\"真实歌名\",\"artist\":\"真实艺术家\"},\"reason\":\"简短的内部选歌备注\"}]}\n\n字段规则：\n- items 数量必须等于 {{请求曲数}}。\n- song 对象只能包含 title 和 artist 两个字段。\n- 不要输出 url、query、id、source、platform 或其他歌曲字段。\n- JSON 中所有字符串必须正确转义并完整闭合。"},{"group":"音乐源","key":"musicLibrary","type":"textarea-presets","label":"本地曲库（每行 JSON 或 歌名 | 歌手 | url | 标签）","rows":8,"variables":["{\"title\":\"歌名\",\"artist\":\"歌手\",\"url\":\"https://...mp3\",\"tags\":\"标签\"}"],"default":"{\"title\":\"示例歌曲\",\"artist\":\"可替换歌手\",\"url\":\"https://example.com/song.mp3\",\"tags\":\"安静,夜晚\",\"note\":\"把这一行换成真实可播放 mp3/flac/ogg 直链\"}\n歌名 | 歌手 | https://example.com/song.mp3 | 标签或备注"},{"group":"音乐偏好","key":"tasteDistillPrompt","type":"textarea-presets","label":"音乐偏好蒸馏提示词","rows":10,"variables":["{{用户输入}}","{{音乐偏好}}","{{收藏曲目}}","{{最近播放}}"],"default":"请根据用户输入、收藏曲目和最近播放记录，蒸馏出一个可以长期用于私人电台推荐的音乐偏好提示词。\n\n要求：\n1. 输出中文，80-220字。\n2. 不要写成列表，不要解释你的过程。\n3. 保留用户明确喜欢/不喜欢的曲风、语言、年代、情绪、节奏、歌手/作品倾向。\n4. 如果信息不足，就谨慎概括，不要编造。\n\n【用户输入】\n{{用户输入}}\n\n【已有偏好】\n{{音乐偏好}}\n\n【收藏曲目】\n{{收藏曲目}}\n\n【最近播放】\n{{最近播放}}"},{"group":"提示词","key":"scriptRewritePrompt","type":"textarea-presets","label":"收藏/手动曲目更新台本提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近主播对话}}","{{曲目列表}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在为已经确定要播放的曲目补写角色台词。不要推荐新歌，不要改变曲目，只给每首给定曲目写一段角色说给用户听的话。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在这个“陪你听歌”的小空间里。可以互相对话、一起跟用户聊天。不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【需要补台词的曲目】\n{{曲目列表}}\n\n写作方向：\n- 像角色陪 user 一起听这首歌，不要写成正式节目串场。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n- 可以回应最近聊天、剧情气氛、用户偏好，但语气要自然。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"scripts\":[{\"key\":\"{{曲目key}}\",\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n填写要求：\n- 每个 scripts 对象必须对应【需要补台词的曲目】里的一首歌，key 必须原样使用给定的曲目 key。\n- host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatPrompt","type":"textarea-presets","label":"主播连线聊天提示词","rows":8,"variables":["{{主持人列表}}","{{用户名称}}","{{用户设定}}","{{角色设定}}","{{世界书}}","{{电台世界书}}","{{剧情上下文}}","{{音乐偏好}}","{{最近播放曲目}}","{{聊天总结}}","{{最近主播对话}}","{{用户输入}}","{{朗读语言}}","{{显示语言}}"],"default":"你正在扮演被用户选中的角色，和 {{用户名称}} 一边听歌一边聊天。这里只回复聊天内容，不推荐新曲目，不输出歌曲。\n\n【主持人】\n{{主持人列表}}\n\n如果有多个主持人，就默认他们都在聊天现场。可以一人回答，也可以多人接话互动；不要受主线剧情在场逻辑限制。\n\n【用户】\n{{用户名称}}\n{{用户设定}}\n\n【角色与世界背景】\n{{角色设定}}\n{{世界书}}\n\n【当前剧情上下文】\n{{剧情上下文}}\n\n【用户音乐偏好】\n{{音乐偏好}}\n\n【最近播放曲目】\n{{最近播放曲目}}\n\n【已总结的聊天】\n{{聊天总结}}\n\n【最近聊天】\n{{最近主播对话}}\n\n【用户刚说】\n{{用户输入}}\n\n写作方向：\n- 像角色本人直接回应 user，不要写成主持人连线、节目采访或正式播音。\n- 可以顺着正在听歌的氛围说，但重点是和 user 说话。\n- 不要主动讲音乐史、发行背景、榜单、专业乐评，除非用户明确要求。\n\n最终回复只能是一个 JSON 对象，从 { 开始，到 } 结束。不要 Markdown，不要解释，不要标题，不要说“下面是”。\n\n输出格式例子如下，例子里的 {{变量}} 是占位符，实际返回时请替换成真实内容：\n{\"replies\":[{\"host\":\"{{主持人名字}}\",\"say\":\"[VoiceTag:{{主持人名字}}:{{朗读语言}}:{{发送文本}}]“{{显示文本}}”\"}]}\n\n主持人存在多人的情况请让角色按场景自然参加。不要只一个人讲话。根据用户这句话和最近聊天，自然判断哪些主持人该说话：可以一个人说，也可以多人接话，也可以有人不发言；不要固定顺序，不要重复上一轮发言模式。用户 @ 到的主持人必须发言。\n\n填写要求：\n- replies 数量按场景自然决定，通常 1-3 条；每条 host 必须来自【主持人】。\n- {{发送文本}} 必须只使用 {{朗读语言}}，这是发给 MiniMax TTS 的内容。\n- {{显示文本}} 必须只使用 {{显示语言}}，这是给用户看的字幕。\n- say 内部字幕必须用中文弯引号 “ ”，不要用英文直引号 \" \" 包字幕。\n- JSON 字符串外层仍然必须使用英文双引号。"},{"group":"提示词","key":"radioChatSummaryPrompt","type":"textarea-presets","label":"主播对话记忆总结提示词","rows":5,"variables":["{{旧总结}}","{{对话内容}}"],"default":"请把私人电台主播与用户的旧对话整理成连续记忆摘要，保留用户偏好、情绪、承诺、重要剧情联系、刚才聊到的歌和主播表达过的态度。不要列表，不要解释，120-260字。\n\n【旧总结】\n{{旧总结}}\n\n【新增对话】\n{{对话内容}}"},{"group":"音乐源","key":"gdMusicApiBase","type":"text","label":"GD音乐台接口地址","default":"https://music-api.gdstudio.xyz/api.php","placeholder":"https://music-api.gdstudio.xyz/api.php"},{"group":"覆盖 API","key":"useOwnApi","type":"toggle","label":"启用自定义电台 API","default":false},{"group":"覆盖 API","key":"ownApiUrl","type":"text","label":"API 地址","default":"","placeholder":"https://api.example.com/v1"},{"group":"覆盖 API","key":"ownApiKey","type":"password","label":"API 密钥","default":""},{"group":"覆盖 API","key":"useOwnModel","type":"toggle","label":"使用自定义模型名","default":false},{"group":"覆盖 API","key":"ownModel","type":"text","label":"模型名","default":""},{"group":"生成参数","key":"temperature","type":"number","label":"Temperature","default":0.9,"min":0,"max":2},{"group":"生成参数","key":"maxTokens","type":"number","label":"最大输出 tokens <button type=\"button\" onclick=\"window._vnmRadioShowLastApi&&window._vnmRadioShowLastApi()\" style=\"margin-left:8px;padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.09);border:.5px solid rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:11px;cursor:pointer;font-family:inherit;\">查看上次 API 返回</button>","default":20000,"min":256,"max":50000},{"group":"生成参数","key":"aiTimeoutMs","type":"number","label":"请求超时（秒）","default":300,"min":15,"max":600},{"group":"覆盖 TTS","key":"ttsProviderOverride","type":"select","label":"语音来源(本电台，留空则跟随全局)","options":[{"value":"","label":"跟随全局"},{"value":"minimax","label":"MiniMax"},{"value":"fishaudio","label":"Fish Audio"}],"default":""},{"group":"覆盖 TTS","key":"ttsJpNameMap","type":"textarea","label":"日文朗读人名读音替换（仅朗读语言为日文时生效）","rows":4,"default":"五条=ごじょう\n杰=すぐる\n傑=すぐる\n悟=さとる\n悟り=さとり\n悟る=さとる\n悟った=さとった\n夏油=げとう","placeholder":"每行一个：原文=读音（假名或罗马音），如 五条=ごじょう；人名独立成词才替换，单字/姓氏称呼照常；若台词含日文常用词（如悟り/悟る），加一行整词替换（长词优先匹配）可防误伤"},{"group":"覆盖 TTS","key":"useOwnTts","type":"toggle","label":"使用自定义凭证(而非全局Key)","default":false},{"group":"覆盖 TTS","key":"ownTtsKey","type":"password","label":"MiniMax API Key","default":""},{"group":"覆盖 TTS","key":"ownTtsGid","type":"text","label":"MiniMax Group ID","default":""},{"group":"覆盖 TTS","key":"ownFishKey","type":"password","label":"Fish Audio API Key","default":""},{"group":"电台","key":"barAlbumGlass","type":"toggle","label":"第二形态专辑图液态玻璃遮罩","default":true},{"group":"歌词","key":"barLyrics","type":"toggle","label":"第二形态流动歌词显示","default":true},{"group":"歌词","key":"orbLyrics","type":"toggle","label":"第一形态侧边歌词显示","default":true},{"group":"歌词","key":"lyricsStyle","type":"select","label":"歌词动画样式","default":"fume","options":[{"v":"fume","l":"浮名（模糊聚焦）"},{"v":"lumi","l":"流光（逐行点亮）"},{"v":"stack","l":"云阶（层叠上升）"},{"v":"scroll","l":"简约滚动"}]},{"group":"电台","key":"keepModeOnVnExit","type":"toggle","label":"退出VN模式时保持当前形态（关=收回第一形态）","default":false},{"group":"电台","key":"autoRetry","type":"toggle","label":"请求失败自动重试","default":true},{"group":"电台","key":"retryCount","type":"number","label":"自动重试次数","default":2,"min":0,"max":10},{"group":"电台","key":"radioTtsEnabled","type":"toggle","label":"启用 TTS 语音（关闭后仅显示台本/字幕不请求语音）","default":true},{"group":"音乐偏好","key":"tasteEnabled","type":"toggle","label":"启用蒸馏结果（{{音乐偏好}}）","default":true},{"group":"电台","key":"leftCardImage","type":"text","label":"第三形态左侧播放栏背景图 URL（留空=当前专辑封面）","default":"","placeholder":"https://..."},{"group":"提示词","key":"artistChatPrompt","type":"textarea-presets","label":"Artist 私聊提示词（同电话 App）","default":"【回复格式（最高优先级，违反即不合格）】\n你的每条回复必须且只能使用下面这一种格式（需要多说几条就分成多行，每行一条）：\n[VoiceTag:{{角色名称}}:{{朗读语言}}:语音文本]“字幕文本”\n- 方括号内的“语音文本”必须整句使用 {{朗读语言}} 书写，这是发送给 TTS 朗读的内容。\n- 中文弯引号“ ”内的“字幕文本”必须整句使用 {{显示语言}} 书写，这是显示给用户看的字幕。\n- 语音文本与字幕文本是同一句话的两种语言版本，内容含义必须一一对应。\n- VoiceTag 格式不是 Markdown、不是 JSON、不是代码块；禁止输出 JSON 对象、```代码块、**加粗**、列表或任何解释。\n\n你正在扮演{{角色名称}}与{{用户名称}}进行对话。\n【角色设定】\n{{角色名称}}\n{{角色设定}}\n【用户设定】\n{{用户名称}}\n{{用户设定}}\n【世界背景信息】\n{{世界书}}\n【当前{{用户名称}}经历】\n{{酒馆历史}}\n【最近对话】\n{{对话内容}}\n请用简短自然的口语风格回复，20字以内，只说话不描述动作，不要输出任何额外内容。","rows":12,"variables":["{{角色名称}}","{{角色设定}}","{{用户名称}}","{{用户设定}}","{{世界书}}","{{酒馆历史}}","{{Horae总结}}","{{对话内容}}","{{用户输入}}","{{当前时间}}","{{朗读语言}}","{{显示语言}}"]},{"group":"电台","key":"artistDepth","type":"number","label":"Artist 私聊携带最大轮数","default":10,"min":0,"max":50},{"group":"电台","key":"artistInjectN","type":"number","label":"Artist 注入酒馆的最近条数","default":8,"min":1,"max":50}];
 
     FIELDS.forEach(function(f) {
 
@@ -10040,6 +10269,18 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
         '',
 
+        '【人物与称呼规则（最高优先级，必须严格遵守）】',
+
+        '1. 主持人之间互相称呼时，必须严格使用符合其人物关系与角色设定的称呼，禁止用全名、姓氏或错误的称呼互称。',
+
+        '2. 依据角色卡与世界书中的关系确定称呼；若关系为亲近挚友，用对方名字的简称（示例：五条悟对夏油杰称“杰”，夏油杰对五条悟称“悟”），不得反过来或混用。',
+
+        '3. 台词中的称呼必须与说话者（speech.host）的身份一致，不得出现说话者视角错位的称呼。',
+
+        '4. 称呼的语言必须与整句台词语言一致：日文台词使用日文称呼（如“傑”“悟”），中文台词使用中文称呼（如“杰”“悟”）。',
+
+        '',
+
         '【输出要求】',
 
         '{{输出格式要求}}',
@@ -10468,7 +10709,11 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
             if (cfg[k] && cfg[k].indexOf('主持人的朗读语言以其在 {{朗读语言}} 中名字后的标注为准') < 0) cfg[k] += langRule;
 
+            if (cfg[k] && cfg[k].indexOf('人物与称呼规则') < 0) cfg[k] += callRule;
+
         });
+
+        var callRule = '\n\n【人物与称呼规则（最高优先级，必须严格遵守）】\n1. 主持人之间互相称呼时，必须严格使用符合其人物关系与角色设定的称呼，禁止用全名、姓氏或错误的称呼互称。\n2. 依据角色卡与世界书中的关系确定称呼；若关系为亲近挚友，用对方名字的简称（示例：五条悟对夏油杰称“杰”，夏油杰对五条悟称“悟”），不得反过来或混用。\n3. 台词中的称呼必须与说话者（speech.host）的身份一致，不得出现说话者视角错位的称呼。\n4. 称呼的语言必须与整句台词语言一致：日文台词使用日文称呼（如“傑”“悟”），中文台词使用中文称呼（如“杰”“悟”）。';
 
         if (!cfg.v3CompanionAutoRequestDefaultV2) {
 
@@ -12480,6 +12725,10 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
     function audioCacheKey(version, item) {
 
+        // 用日文读音归一后的实际朗读文本作为缓存键：旧缓存（汉字人名念错音的音频）自动失效，
+        // 新缓存为正确发音且文本固定时稳定命中，中文角色/无映射时文本不变不影响既有缓存。
+        var _jt = _jpNameSpeechText(item.ttsText || '', hostForName(item.host));
+
         return [
 
             'continuous',
@@ -12488,7 +12737,7 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
             item.id,
 
-            simpleHash((item.host || '') + '\n' + (item.ttsText || '') + '\n' + voiceSignature(item.host))
+            simpleHash((item.host || '') + '\n' + _jt + '\n' + voiceSignature(item.host))
 
         ].join('|');
 
@@ -13204,7 +13453,9 @@ var CSS_FIX = '.vnr2-chat-fm{overflow:visible!important;border-bottom:0!importan
 
                     }
 
-                    _tts(job.ttsText, hostForName(job.host), function(url) {
+                    var _ttsChN = hostForName(job.host);
+
+                    _tts(_jpNameSpeechText(job.ttsText, _ttsChN), _ttsChN, function(url) {
 
                         job.requesting = false;
 
